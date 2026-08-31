@@ -1,71 +1,42 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { Blueshift, Star } from "@proj/shared";
 import { useState } from "react";
 import { api } from "./lib/api";
-import { ConfirmDialog } from "./components/ui/ConfirmDialog";
 
-async function getTasks() {
-  const response = await api.api.tasks.$get();
-  if (!response.ok) throw new Error("Could not load tasks");
+const json = async <T,>(response: { ok: boolean; json: () => Promise<T> }) => {
+  if (!response.ok) throw new Error("Request failed");
   return response.json();
-}
+};
 
 export default function App() {
-  const [title, setTitle] = useState("");
-  const queryClient = useQueryClient();
-  const tasks = useQuery({ queryKey: ["tasks"], queryFn: getTasks });
-  const createTask = useMutation({
-    mutationFn: async (taskTitle: string) => {
-      const response = await api.api.tasks.$post({ json: { title: taskTitle } });
-      if (!response.ok) throw new Error("Could not create task");
-      return response.json();
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tasks"] }),
-  });
-  const toggleTask = useMutation({
-    mutationFn: async ({ id, completed }: { id: string; completed: boolean }) => {
-      const response = await api.api.tasks[":id"].$patch({ param: { id }, json: { completed } });
-      if (!response.ok) throw new Error("Could not update task");
-      return response.json();
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tasks"] }),
-  });
+  const client = useQueryClient();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [modal, setModal] = useState<"blueshift" | "star" | null>(null);
+  const blueshifts = useQuery({ queryKey: ["blueshifts"], queryFn: async () => (await api.api.blueshifts.$get()).json() });
+  const selected = blueshifts.data?.find((item) => item.id === selectedId);
+  const stars = useQuery({ queryKey: ["stars", selectedId], enabled: !!selectedId, queryFn: async () => (await api.api.blueshifts[":id"].stars.$get({ param: { id: selectedId! } })).json() });
+  const northStars = useQuery({ queryKey: ["north-stars"], queryFn: async () => (await api.api["north-stars"].$get()).json() });
+  const refresh = () => { client.invalidateQueries({ queryKey: ["blueshifts"] }); client.invalidateQueries({ queryKey: ["stars"] }); client.invalidateQueries({ queryKey: ["north-stars"] }); };
+  const createBlueshift = useMutation({ mutationFn: async (input: { name: string; goal?: string }) => json(await api.api.blueshifts.$post({ json: input })), onSuccess: (item: Blueshift) => { setSelectedId(item.id); setModal(null); refresh(); } });
+  const createStar = useMutation({ mutationFn: async (title: string) => json<any>(await api.api.blueshifts[":id"].stars.$post({ param: { id: selectedId! }, json: { title } }) as any), onSuccess: () => { setModal(null); refresh(); } });
+  const updateStar = useMutation({ mutationFn: async ({ id, ...input }: { id: string; completed?: boolean; northStar?: boolean }) => json<any>(await api.api.stars[":id"].$patch({ param: { id }, json: input }) as any), onSuccess: refresh });
+  const deleteStar = useMutation({ mutationFn: async (id: string) => api.api.stars[":id"].$delete({ param: { id } }), onSuccess: refresh });
+  const deleteBlueshift = useMutation({ mutationFn: async (id: string) => api.api.blueshifts[":id"].$delete({ param: { id } }), onSuccess: (_data, id) => { if (id === selectedId) setSelectedId(null); refresh(); } });
 
-  const submit = (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!title.trim() || createTask.isPending) return;
-    createTask.mutate(title.trim(), { onSuccess: () => setTitle("") });
-  };
-
-  return (
-    <main className="min-h-screen bg-surface text-ink">
-      <div className="mx-auto max-w-3xl px-5 py-10 sm:px-8 sm:py-16">
-        <header className="mb-12 flex items-start justify-between gap-4">
-          <div>
-            <p className="mb-3 text-xs font-bold uppercase tracking-[0.22em] text-accent">Personal command center</p>
-            <h1 className="font-display text-5xl leading-none tracking-tight sm:text-7xl">Contain the chaos.</h1>
-            <p className="mt-5 max-w-md text-base leading-7 text-muted">A quiet place for the next useful thing. Keep momentum without losing the plot.</p>
-          </div>
-          <ConfirmDialog title="About">
-            <h2 className="font-display text-2xl">Built for focus.</h2>
-            <p className="mt-2 text-sm leading-6 text-muted">This local-first workspace keeps your tasks on your machine.</p>
-          </ConfirmDialog>
-        </header>
-
-        <form onSubmit={submit} className="mb-10 flex gap-2 rounded-2xl border border-line bg-paper p-2 shadow-sm">
-          <input aria-label="New task" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="What needs doing?" className="min-w-0 flex-1 bg-transparent px-4 py-3 text-base outline-none placeholder:text-muted/60" />
-          <button className="rounded-xl bg-accent px-5 py-3 text-sm font-bold text-white transition hover:bg-accent/90 disabled:opacity-50" disabled={!title.trim() || createTask.isPending}>Add task</button>
-        </form>
-
-        <section aria-labelledby="tasks-heading">
-          <div className="mb-4 flex items-center justify-between"><h2 id="tasks-heading" className="text-sm font-bold uppercase tracking-[0.16em] text-muted">Open loops</h2><span className="text-sm text-muted">{tasks.data?.length ?? 0} total</span></div>
-          <div className="space-y-2">
-            {tasks.isLoading && <p className="py-8 text-center text-muted">Loading your loops...</p>}
-            {tasks.isError && <p className="rounded-xl bg-red-50 p-4 text-sm text-red-700">The server is unavailable. Start it with <code>bun run dev</code>.</p>}
-            {tasks.data?.map((task) => <label key={task.id} className="group flex cursor-pointer items-center gap-4 rounded-2xl border border-line bg-paper p-4 transition hover:border-accent/50"><input type="checkbox" checked={task.completed} onChange={(event) => toggleTask.mutate({ id: task.id, completed: event.target.checked })} className="size-5 accent-accent" /><span className={task.completed ? "text-muted line-through" : "text-ink"}>{task.title}</span></label>)}
-            {tasks.data?.length === 0 && !tasks.isLoading && <p className="rounded-2xl border border-dashed border-line p-10 text-center text-muted">Nothing competing for your attention yet.</p>}
-          </div>
-        </section>
-      </div>
-    </main>
-  );
+  return <main className="min-h-screen bg-surface text-ink"><div className="mx-auto max-w-6xl px-5 py-8 sm:px-10 sm:py-12">
+    <header className="mb-10 flex items-end justify-between gap-4"><div><p className="mb-2 font-mono text-xs uppercase tracking-[0.2em] text-accent">Starway / local command center</p><h1 className="font-display text-5xl font-bold tracking-tight sm:text-7xl">Find your way.</h1><p className="mt-4 text-muted">Big direction. Next useful move.</p></div><button onClick={() => setModal("blueshift")} className="rounded-xl bg-accent px-4 py-3 text-sm font-bold text-white hover:bg-accent/90">+ New Blueshift</button></header>
+    <section aria-labelledby="north-stars-heading" className="mb-8 rounded-3xl bg-ink p-5 text-paper shadow-xl sm:p-7"><div className="mb-5 flex items-center justify-between"><h2 id="north-stars-heading" className="font-display text-2xl font-bold">North Stars</h2><span className="font-mono text-xs text-paper/60">{northStars.data?.length ?? 0} in focus</span></div><div className="grid gap-3 sm:grid-cols-2">{northStars.data?.map((star) => <StarRow key={star.id} star={star} onSelect={() => setSelectedId(star.blueshiftId)} onToggle={(completed) => updateStar.mutate({ id: star.id, completed })} onDelete={() => deleteStar.mutate(star.id)} dark />)}{northStars.data?.length === 0 && <p className="text-sm text-paper/60">No North Stars yet.</p>}</div></section>
+    <div className="grid gap-6 lg:grid-cols-[18rem_1fr]"><aside className="rounded-3xl border border-line bg-paper p-5"><div className="mb-4 flex items-center justify-between"><h2 className="font-display text-xl font-bold">Blueshifts</h2><span className="font-mono text-xs text-muted">{blueshifts.data?.length ?? 0}</span></div><div className="space-y-2">{blueshifts.data?.map((item) => <div key={item.id} className={`group flex items-start gap-2 rounded-2xl p-3 ${selectedId === item.id ? "bg-accent/10 text-accent" : "hover:bg-surface"}`}><button className="min-w-0 flex-1 text-left" onClick={() => setSelectedId(item.id)}><strong className="block truncate">{item.name}</strong>{item.goal && <span className="mt-1 block truncate text-xs text-muted">{item.goal}</span>}</button><button aria-label={`Delete ${item.name}`} title="Delete Blueshift" onClick={() => deleteBlueshift.mutate(item.id)} className="px-1 text-lg text-muted opacity-60 hover:text-accent">×</button></div>)}{blueshifts.data?.length === 0 && <p className="py-5 text-sm text-muted">No Blueshifts.</p>}</div></aside>
+      <section className="rounded-3xl border border-line bg-paper p-5 sm:p-7">{selected ? <><div className="mb-7 flex items-start justify-between gap-3"><div><p className="font-mono text-xs uppercase tracking-widest text-accent">Selected Blueshift</p><h2 className="mt-1 font-display text-3xl font-bold">{selected.name}</h2>{selected.goal && <p className="mt-2 max-w-xl text-muted">{selected.goal}</p>}</div><button onClick={() => setModal("star")} className="rounded-xl bg-ink px-4 py-3 text-sm font-bold text-paper hover:bg-ink/90">+ New Star</button></div><div className="space-y-3">{stars.data?.map((star) => <StarRow key={star.id} star={star} onToggle={(completed) => updateStar.mutate({ id: star.id, completed })} onNorthStar={(northStar) => updateStar.mutate({ id: star.id, northStar })} onDelete={() => deleteStar.mutate(star.id)} />)}{stars.data?.length === 0 && <p className="rounded-2xl border border-dashed border-line p-10 text-center text-muted">No Stars yet.</p>}</div></> : <div className="flex min-h-64 flex-col items-center justify-center gap-5 text-center"><p><span className="block font-display text-2xl font-bold">Choose a Blueshift</span><span className="mt-2 block text-muted">Your Stars will appear here.</span></p><button disabled className="rounded-xl bg-ink px-4 py-3 text-sm font-bold text-paper opacity-40">+ New Star</button></div>}</section></div>
+    {modal === "blueshift" && <BlueshiftModal onClose={() => setModal(null)} onSubmit={(input) => createBlueshift.mutate(input)} />}{modal === "star" && selected && <StarModal blueshift={selected.name} onClose={() => setModal(null)} onSubmit={(title) => createStar.mutate(title)} />}
+  </div></main>;
 }
+
+function StarRow({ star, onToggle, onNorthStar, onSelect, onDelete, dark = false }: { star: Star; onToggle: (value: boolean) => void; onNorthStar?: (value: boolean) => void; onSelect?: () => void; onDelete: () => void; dark?: boolean }) {
+  return <div className={`flex items-center gap-3 rounded-2xl border p-3 ${dark ? "border-paper/15 bg-paper/10" : "border-line"}`}><input aria-label={`Complete ${star.title}`} type="checkbox" checked={star.completed} onChange={(event) => onToggle(event.target.checked)} className="size-5 accent-accent" /><button onClick={onSelect} className={`min-w-0 flex-1 text-left ${star.completed ? "text-muted line-through" : ""}`}><span className="block truncate">{star.title}</span>{dark && <span className="mt-1 block font-mono text-[10px] uppercase tracking-wider text-paper/50">North Star</span>}</button>{onNorthStar && <button aria-label={star.northStar ? `Remove ${star.title} as North Star` : `Make ${star.title} a North Star`} onClick={() => onNorthStar(!star.northStar)} className={`text-xl ${star.northStar ? "text-accent" : "text-muted"}`}>★</button>}<button aria-label={`Delete ${star.title}`} title="Delete Star" onClick={onDelete} className="px-1 text-lg text-muted hover:text-accent">×</button></div>;
+}
+
+function BlueshiftModal({ onClose, onSubmit }: { onClose: () => void; onSubmit: (input: { name: string; goal?: string }) => void }) { const [name, setName] = useState(""); const [goal, setGoal] = useState(""); return <Modal title="New Blueshift" onClose={onClose}><form onSubmit={(event) => { event.preventDefault(); if (name.trim()) onSubmit({ name, goal }); }}><label className="block text-sm font-bold">Name<input autoFocus value={name} onChange={(e) => setName(e.target.value)} className="mt-2 w-full rounded-xl border border-line bg-surface p-3" /></label><label className="mt-4 block text-sm font-bold">Goal <span className="font-normal text-muted">(optional)</span><textarea value={goal} onChange={(e) => setGoal(e.target.value)} className="mt-2 w-full rounded-xl border border-line bg-surface p-3" rows={3} /></label><Actions disabled={!name.trim()} onClose={onClose} /></form></Modal>; }
+function StarModal({ blueshift, onClose, onSubmit }: { blueshift: string; onClose: () => void; onSubmit: (title: string) => void }) { const [title, setTitle] = useState(""); return <Modal title="New Star" onClose={onClose}><form onSubmit={(event) => { event.preventDefault(); if (title.trim()) onSubmit(title); }}><p className="mb-4 rounded-xl bg-surface p-3 text-sm">Blueshift: <strong>{blueshift}</strong></p><label className="block text-sm font-bold">Title<input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} className="mt-2 w-full rounded-xl border border-line bg-surface p-3" /></label><Actions disabled={!title.trim()} onClose={onClose} /></form></Modal>; }
+function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) { return <div role="dialog" aria-modal="true" className="fixed inset-0 z-10 flex items-center justify-center bg-ink/40 p-5"><div className="w-full max-w-md rounded-3xl bg-paper p-6 shadow-2xl"><div className="mb-5 flex justify-between"><h2 className="font-display text-2xl font-bold">{title}</h2><button aria-label="Close" onClick={onClose} className="text-2xl text-muted">×</button></div>{children}</div></div>; }
+function Actions({ disabled, onClose }: { disabled: boolean; onClose: () => void }) { return <div className="mt-6 flex justify-end gap-2"><button type="button" onClick={onClose} className="rounded-xl px-4 py-2 text-sm font-bold text-muted">Cancel</button><button disabled={disabled} className="rounded-xl bg-accent px-4 py-2 text-sm font-bold text-white disabled:opacity-40">Create</button></div>; }
