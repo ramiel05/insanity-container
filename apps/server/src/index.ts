@@ -1,12 +1,12 @@
 import { cors } from "hono/cors";
 import { Hono } from "hono";
 import { db } from "./db";
-import { createRoutes, createStarRoutes } from "./routes/blueshifts";
+import { createBlueshiftRoutes, createStarRoutes } from "./routes/blueshifts";
 
 export function createApp(database = db) {
   return new Hono()
   .use("/api/*", cors())
-  .route("/api/blueshifts", createRoutes(database))
+   .route("/api/blueshifts", createBlueshiftRoutes(database))
   .route("/api/north-stars", createStarRoutes(database))
   .route("/api/stars", createStarRoutes(database));
 }

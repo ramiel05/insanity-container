@@ -7,7 +7,7 @@ import { blueshifts, stars } from "../db/schema";
 
 type Database = typeof defaultDb;
 
-export function createRoutes(database: Database) {
+export function createBlueshiftRoutes(database: Database) {
   const app = new Hono()
     .get("/", async (c) => c.json(await database.select().from(blueshifts).orderBy(blueshifts.createdAt)))
     .post("/", zValidator("json", createBlueshiftSchema), async (c) => {
