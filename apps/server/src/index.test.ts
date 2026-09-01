@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { unlinkSync } from "node:fs";
 import { createDb } from "./db";
+import { stars } from "./db/schema";
 import { createApp } from "./index";
 
 const path = `/tmp/starway-test-${crypto.randomUUID()}.sqlite`;
@@ -41,8 +42,34 @@ describe("wayfinding API", () => {
     const orphan = await request(`/api/blueshifts/${firstBlueshift}/stars`, { method: "POST", body: JSON.stringify({ title: "Cascade me" }), headers: { "Content-Type": "application/json" } });
     expect(orphan.status).toBe(201);
     expect((await request(`/api/blueshifts/${firstBlueshift}`, { method: "DELETE" })).status).toBe(204);
-    expect((await request(`/api/blueshifts/${firstBlueshift}/stars`)).json()).resolves.toEqual([]);
+    expect((await request(`/api/blueshifts/${firstBlueshift}/stars`)).status).toBe(404);
     expect((await request(`/api/blueshifts/${firstBlueshift}`)).status).toBe(404);
+  });
+
+  test("returns not-found when listing Stars for an unknown Blueshift", async () => {
+    const response = await request(`/api/blueshifts/${crypto.randomUUID()}/stars`);
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({ error: "Blueshift not found" });
+  });
+
+  test("serves North Stars under their own route and does not list them under the Stars route", async () => {
+    const northStars = await request("/api/north-stars");
+    expect(northStars.status).toBe(200);
+    expect(await northStars.json()).toEqual(expect.any(Array));
+    expect((await request("/api/stars")).status).toBe(404);
+  });
+
+  test("keeps Stars created within the same millisecond in insertion order", async () => {
+    const created = await request("/api/blueshifts", { method: "POST", body: JSON.stringify({ name: "Ordered" }), headers: { "Content-Type": "application/json" } });
+    const { id } = await created.json();
+    const at = 1_700_000_000_000;
+    await storage.db.insert(stars).values([
+      { id: crypto.randomUUID(), blueshiftId: id, title: "First", completed: false, northStar: false, createdAt: at },
+      { id: crypto.randomUUID(), blueshiftId: id, title: "Second", completed: false, northStar: false, createdAt: at },
+    ]);
+    const response = await request(`/api/blueshifts/${id}/stars`);
+    expect(response.status).toBe(200);
+    expect((await response.json()).map((star: { title: string }) => star.title)).toEqual(["First", "Second"]);
   });
 });
 

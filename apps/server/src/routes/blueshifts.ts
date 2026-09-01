@@ -1,6 +1,6 @@
 import { createBlueshiftSchema, createStarSchema, updateStarSchema } from "@proj/shared";
 import { zValidator } from "@hono/zod-validator";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import type { db as defaultDb } from "../db";
 import { blueshifts, stars } from "../db/schema";
@@ -9,7 +9,7 @@ type Database = typeof defaultDb;
 
 export function createBlueshiftRoutes(database: Database) {
   const app = new Hono()
-    .get("/", async (c) => c.json(await database.select().from(blueshifts).orderBy(blueshifts.createdAt)))
+    .get("/", async (c) => c.json(await database.select().from(blueshifts).orderBy(blueshifts.createdAt, sql`rowid`)))
     .post("/", zValidator("json", createBlueshiftSchema), async (c) => {
       const input = c.req.valid("json");
       const blueshift = { id: crypto.randomUUID(), name: input.name, goal: input.goal || null, createdAt: Date.now() };
@@ -21,7 +21,11 @@ export function createBlueshiftRoutes(database: Database) {
       if (!deleted) return c.json({ error: "Blueshift not found" }, 404);
       return c.body(null, 204);
     })
-    .get("/:id/stars", async (c) => c.json(await database.select().from(stars).where(eq(stars.blueshiftId, c.req.param("id"))).orderBy(stars.createdAt)))
+    .get("/:id/stars", async (c) => {
+      const [blueshift] = await database.select().from(blueshifts).where(eq(blueshifts.id, c.req.param("id")));
+      if (!blueshift) return c.json({ error: "Blueshift not found" }, 404);
+      return c.json(await database.select().from(stars).where(eq(stars.blueshiftId, c.req.param("id"))).orderBy(stars.createdAt, sql`rowid`));
+    })
     .post("/:id/stars", zValidator("json", createStarSchema), async (c) => {
       const blueshift = await database.select().from(blueshifts).where(eq(blueshifts.id, c.req.param("id"))).get();
       if (!blueshift) return c.json({ error: "Blueshift not found" }, 404);
@@ -34,9 +38,12 @@ export function createBlueshiftRoutes(database: Database) {
   return app;
 }
 
+export function createNorthStarRoutes(database: Database) {
+  return new Hono().get("/", async (c) => c.json(await database.select().from(stars).where(eq(stars.northStar, true)).orderBy(stars.createdAt, sql`rowid`)));
+}
+
 export function createStarRoutes(database: Database) {
   return new Hono()
-    .get("/", async (c) => c.json(await database.select().from(stars).where(eq(stars.northStar, true)).orderBy(stars.createdAt)))
     .patch("/:id", zValidator("json", updateStarSchema), async (c) => {
       const [star] = await database.update(stars).set(c.req.valid("json")).where(eq(stars.id, c.req.param("id"))).returning();
       if (!star) return c.json({ error: "Star not found" }, 404);

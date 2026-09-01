@@ -1,0 +1,3 @@
+interface:
+  display_name: "Hono Endpoints"
+  short_description: "Pattern for Hono endpoints and client API calls"
