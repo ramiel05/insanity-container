@@ -4,7 +4,7 @@ import { createDb } from "./db";
 import { stars } from "./db/schema";
 import { createApp } from "./index";
 
-const path = `/tmp/starway-test-${crypto.randomUUID()}.sqlite`;
+const path = `/tmp/polaris-test-${crypto.randomUUID()}.sqlite`;
 const storage = createDb(path);
 const app = createApp(storage.db);
 const request = (url: string, init?: RequestInit) => app.fetch(new Request(`http://test${url}`, init));

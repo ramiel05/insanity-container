@@ -1,6 +1,6 @@
-# Starway Context
+# Polaris Context
 
-Starway is a local-first personal wayfinding workspace for turning larger goals into manageable work.
+Polaris is a local-first personal wayfinding workspace for turning larger goals into manageable work.
 
 ## Language
 

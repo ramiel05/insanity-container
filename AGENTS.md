@@ -36,3 +36,7 @@ Use the canonical labels `needs-triage`, `needs-info`, `ready-for-agent`, `ready
 ### Domain docs
 
 This is a single-context repo using root `CONTEXT.md` and `docs/adr/`. See `docs/agents/domain.md`.
+
+### ADR immutability
+
+Accepted ADRs in `docs/adr/` are immutable: never amend, edit, or update an accepted ADR. A decision change warrants a new ADR that supersedes the old one.
