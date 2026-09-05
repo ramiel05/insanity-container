@@ -3,8 +3,9 @@
   "private": true,
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
-    "dev": "bun --cwd packages/legend generate && concurrently --kill-others --names server,web \"bun --cwd apps/server dev\" \"bun --cwd apps/web dev\"",
-    "build": "bun --cwd packages/legend generate && bun --filter \"*\" build",
+    "generate": "bun --cwd packages/legend generate",
+    "dev": "concurrently --kill-others --names server,web \"bun --cwd apps/server dev\" \"bun --cwd apps/web dev\"",
+    "build": "bun --filter \"*\" build",
     "typecheck": "bun --filter \"*\" typecheck",
     "test": "bun test apps/server/src packages/legend/src",
     "test:browser": "playwright test"

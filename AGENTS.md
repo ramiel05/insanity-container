@@ -32,6 +32,14 @@ rm apps/server/sqlite.db && bun --cwd apps/server db:push
 
 Tests push the schema into a temp file automatically; no other setup is needed. See `docs/adr/0003-schema-ownership-and-database-lifecycle.md`.
 
+### Legend
+
+`CONTEXT.md` is the canonical glossary, and `packages/legend` parses it into a checked-in generated artifact (`packages/legend/src/legend.json`). After editing `CONTEXT.md`, run `bun run generate` from the repository root before testing or building; the drift-guard test fails on a stale artifact. See `docs/adr/0004-legend-generated-from-glossary.md` and `docs/adr/0005-legend-generator-runs-on-demand.md`.
+
+### Package scripts
+
+Each package.json script handles exactly one concern. Never chain steps into a script with `&&` (for example, running a generator inside `dev` or `build`); keep each step as its own script and run them in sequence. If chaining typical workflows becomes tedious, introduce a dedicated convenience layer (e.g. a Makefile) rather than overloading scripts.
+
 Run validation from the repository root:
 
 ```bash

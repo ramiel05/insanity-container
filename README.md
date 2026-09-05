@@ -17,3 +17,13 @@ The schema lives in `apps/server/src/db/schema.ts` and `drizzle-kit push` is the
 ```bash
 rm apps/server/sqlite.db && bun --cwd apps/server db:push
 ```
+
+## Legend
+
+The Legend is generated from the glossary in `CONTEXT.md` by `packages/legend` into a checked-in artifact (`packages/legend/src/legend.json`). After editing `CONTEXT.md`, regenerate it before testing or building:
+
+```bash
+bun run generate
+```
+
+A drift-guard test fails if the artifact is stale.
