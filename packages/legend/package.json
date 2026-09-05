@@ -1,0 +1,17 @@
+{
+  "name": "@proj/legend",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "generate": "bun src/generate.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.1",
+    "typescript": "^7.0.2"
+  }
+}

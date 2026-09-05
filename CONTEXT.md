@@ -13,7 +13,7 @@ A single, actionable piece of work belonging to one Blueshift.
 _Avoid_: Task, todo, to-do, item
 
 **North Star**:
-A Star designated as an important focus for the day. North Star is a persistent designation and there may be multiple North Stars at once.
+A Star designated as current focus. North Star is a persistent designation: there is no limit on how many North Stars may exist at once.
 _Avoid_: Priority, featured task, daily task
 
 **Blueshifts**:
@@ -31,7 +31,7 @@ The static site that documents the Polaris methodology: a Legend of concepts and
 _Avoid_: docs site, cheat sheet site, help pages
 
 **Legend**:
-The Atlas's cheat sheet: the canonical definitions of Polaris's concepts.
+The canonical quick-reference of Polaris's concepts, wherever it appears.
 _Avoid_: cheat sheet, glossary
 
 **Guide**:
