@@ -7,6 +7,8 @@ The Drizzle schema in `apps/server/src/db/schema.ts` is the single source of tru
 
 Because the product is early, the standing policy on breaking model changes is to discard the data rather than write migrations or backward-compatibility code. The escape hatch from any push failure is deleting the database file and pushing again. This policy expires the moment the file holds data worth keeping: at that point `--force` comes out of the push script, migrations are introduced, and a new ADR records the shift.
 
+This ADR supersedes the corresponding passage in ADR 0002 ("The initial local database may be discarded when this model changes"), which remains an accepted immutable snapshot: the disposal policy is unchanged, but its ownership and mechanics are now defined here.
+
 **Consequences**
 
 - `bun run db:push` in `apps/server` is the only schema command; forgetting it after a schema edit fails loudly on the first query.
