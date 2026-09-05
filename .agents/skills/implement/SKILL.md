@@ -13,3 +13,5 @@ Run typechecking regularly, single test files regularly, and the full test suite
 Once done, use /code-review to review the work.
 
 Commit your work to the current branch.
+
+If the work came from a tracked ticket (GitHub issue), close it as the final step: `gh issue close <n> --comment "<what shipped> (<commit sha>)"`. The work is done only when its ticket is closed.
