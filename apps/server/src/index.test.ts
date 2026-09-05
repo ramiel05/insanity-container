@@ -1,10 +1,21 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { unlinkSync } from "node:fs";
+import { join } from "node:path";
 import { createDb } from "./db";
 import { stars } from "./db/schema";
 import { createApp } from "./index";
 
 const path = `/tmp/polaris-test-${crypto.randomUUID()}.sqlite`;
+const serverRoot = join(import.meta.dir, "..");
+const pushed = Bun.spawnSync(["bun", "run", "db:push"], {
+  cwd: serverRoot,
+  env: { ...process.env, DATABASE_URL: path },
+  stdout: "pipe",
+  stderr: "pipe",
+});
+if (pushed.exitCode !== 0) {
+  throw new Error(`db:push failed:\n${new TextDecoder().decode(pushed.stderr)}`);
+}
 const storage = createDb(path);
 const app = createApp(storage.db);
 const request = (url: string, init?: RequestInit) => app.fetch(new Request(`http://test${url}`, init));

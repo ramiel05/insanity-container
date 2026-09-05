@@ -23,3 +23,17 @@ _Avoid_: Projects
 **Stars**:
 The plural of Star.
 _Avoid_: Tasks, todos
+
+### Atlas
+
+**Atlas**:
+The static site that documents the Polaris methodology: a Legend of concepts and Guides for working with them.
+_Avoid_: docs site, cheat sheet site, help pages
+
+**Legend**:
+The Atlas's cheat sheet: the canonical definitions of Polaris's concepts.
+_Avoid_: cheat sheet, glossary
+
+**Guide**:
+A walkthrough in the Atlas of one part of the Polaris methodology.
+_Avoid_: chart, tutorial, how-to

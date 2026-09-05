@@ -16,6 +16,22 @@ bun --cwd apps/server dev
 bun --cwd apps/web dev
 ```
 
+### Database
+
+`apps/server/src/db/schema.ts` is the single source of truth for the SQLite schema, and `drizzle-kit push` is the only thing that shapes a database file. Create the schema on a fresh clone (or after deleting the file):
+
+```bash
+bun --cwd apps/server db:push
+```
+
+After editing `schema.ts`, run the same command: push reconciles the file in place, auto-accepting data loss. On a breaking model change, delete the file instead of reconciling:
+
+```bash
+rm apps/server/sqlite.db && bun --cwd apps/server db:push
+```
+
+Tests push the schema into a temp file automatically; no other setup is needed. See `docs/adr/0003-schema-ownership-and-database-lifecycle.md`.
+
 Run validation from the repository root:
 
 ```bash
