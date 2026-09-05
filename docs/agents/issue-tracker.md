@@ -10,6 +10,7 @@ Issues and specs for this repo live as GitHub issues. Use the `gh` CLI for all o
 - **Comment on an issue**: `gh issue comment <number> --body "..."`
 - **Apply / remove labels**: `gh issue edit <number> --add-label "..."` / `--remove-label "..."`
 - **Close**: `gh issue close <number> --comment "..."`
+- **Close completed work**: when an agent finishes implementing a ticket, it closes that ticket as its final step, with a comment naming what shipped and the commit. Done means closed: blocking edges clear and frontier queries only see open tickets, so an implemented ticket left open misroutes future agents back to finished work. Triage labels need no cleanup on close — closed tickets drop out of every open-state query.
 
 Infer the repo from `git remote -v`; `gh` does this automatically when run inside a clone.
 
