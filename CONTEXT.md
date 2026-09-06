@@ -16,14 +16,6 @@ _Avoid_: Task, todo, to-do, item
 A Star designated as current focus. North Star is a persistent designation: there is no limit on how many North Stars may exist at once.
 _Avoid_: Priority, featured task, daily task
 
-**Blueshifts**:
-The plural of Blueshift.
-_Avoid_: Projects
-
-**Stars**:
-The plural of Star.
-_Avoid_: Tasks, todos
-
 ### Atlas
 
 **Atlas**:
