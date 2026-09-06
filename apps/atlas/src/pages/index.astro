@@ -1,0 +1,212 @@
+---
+import "@proj/design/tokens.css";
+import { legend } from "@proj/legend";
+
+const slug = (value: string) =>
+  value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+const sections = [...new Set(legend.map((entry) => entry.section))];
+
+const guides = [
+  {
+    title: "Turn goals into Blueshifts",
+    practice:
+      "When a goal takes shape, give it a name and a stated goal, and open a Blueshift to hold it. Everything that serves the goal — every Star — belongs to that Blueshift, so the goal always has one visible home.",
+  },
+  {
+    title: "Decompose Blueshifts into Stars",
+    practice:
+      "Walk a Blueshift and ask what single, actionable pieces of work would move it forward. Write each one as a Star, so the Blueshift becomes a visible map of its own progress.",
+  },
+  {
+    title: "Choose one to three North Stars for the day",
+    practice:
+      "At the start of the day, look across your Stars and designate one to three of them as North Stars. Let those few steer the day instead of the whole backlog.",
+  },
+  {
+    title: "The end-of-day review",
+    practice:
+      "At the end of the day, look back at your North Stars: what moved, what stalled, and what tomorrow's focus should be. Close the loop before the next day opens.",
+  },
+];
+
+const guideId = (title: string) => `guide-${slug(title)}`;
+const conceptId = (term: string) => `concept-${slug(term)}`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Atlas — the Polaris methodology</title>
+  </head>
+  <body>
+    <nav class="sidebar" aria-label="Atlas contents">
+      <p class="sidebar-title">Atlas</p>
+      <ul>
+        <li><a href="#intro">Intro</a></li>
+        <li>
+          <a href="#legend">Legend</a>
+          <ul>
+            {legend.map((entry) => (
+              <li>
+                <a href={`#${conceptId(entry.term)}`}>{entry.term}</a>
+              </li>
+            ))}
+          </ul>
+        </li>
+        <li>
+          <a href="#guides">Guides</a>
+          <ul>
+            {guides.map((guide) => (
+              <li>
+                <a href={`#${guideId(guide.title)}`}>{guide.title}</a>
+              </li>
+            ))}
+          </ul>
+        </li>
+      </ul>
+    </nav>
+
+    <main>
+      <section id="intro">
+        <h1>Atlas</h1>
+        <p>
+          Atlas documents the Polaris methodology: a Legend of concepts and
+          Guides for working with them. Polaris is a local-first personal
+          wayfinding workspace for turning larger goals into manageable work.
+        </p>
+      </section>
+
+      <section id="legend" aria-label="Legend">
+        <h2>Legend</h2>
+        <p>The canonical quick-reference of Polaris's concepts.</p>
+        {sections.map((section) => (
+          <div class="legend-section">
+            <h3>{section}</h3>
+            {legend.filter((entry) => entry.section === section).map((entry) => (
+              <article id={conceptId(entry.term)}>
+                <h4>{entry.term}</h4>
+                <p>{entry.definition}</p>
+              </article>
+            ))}
+          </div>
+        ))}
+      </section>
+
+      <section id="guides" aria-label="Guides">
+        <h2>Guides</h2>
+        {guides.map((guide) => (
+          <article id={guideId(guide.title)}>
+            <h3>{guide.title}</h3>
+            <p>{guide.practice}</p>
+            <p class="guide-note">
+              Polaris does not enforce this guide: it is advice, not a mechanism.
+            </p>
+          </article>
+        ))}
+      </section>
+    </main>
+  </body>
+</html>
+
+<style>
+  :global(html) {
+    scroll-behavior: smooth;
+  }
+
+  :global(body) {
+    background: var(--design-surface);
+    color: var(--design-ink);
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 16rem;
+    overflow-y: auto;
+    padding: 1.5rem 1rem;
+    background: var(--design-paper);
+    border-right: 1px solid var(--design-line);
+    font-size: 0.9rem;
+  }
+
+  .sidebar-title {
+    font-family: var(--design-font-display);
+    font-weight: 700;
+    margin: 0 0 1rem;
+  }
+
+  .sidebar ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .sidebar ul ul {
+    padding-left: 1rem;
+  }
+
+  .sidebar li {
+    margin: 0.25rem 0;
+  }
+
+  .sidebar a {
+    color: var(--design-ink);
+    text-decoration: none;
+  }
+
+  .sidebar a:hover {
+    color: var(--design-accent);
+  }
+
+  main {
+    margin-left: 16rem;
+    padding: 2.5rem 3rem;
+    max-width: 46rem;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--design-font-display);
+  }
+
+  section {
+    margin-bottom: 3rem;
+  }
+
+  .legend-section {
+    margin-top: 1.5rem;
+  }
+
+  .legend-section h3 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--design-muted);
+  }
+
+  article {
+    margin-bottom: 1.25rem;
+  }
+
+  article h4 {
+    margin: 0;
+    font-family: var(--design-font-mono);
+    font-size: 1rem;
+  }
+
+  article p {
+    margin: 0.25rem 0 0;
+    line-height: 1.5;
+  }
+
+  .guide-note {
+    color: var(--design-muted);
+    font-size: 0.9rem;
+  }
+</style>
