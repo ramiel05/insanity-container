@@ -7,13 +7,14 @@ bun install
 bun run dev
 ```
 
-The web app runs at `http://localhost:5173` and the API runs at `http://localhost:3000`. Keep the terminal running while using the app. Stop both servers with `Ctrl-C`.
+The web app runs at `http://localhost:5173`, the API runs at `http://localhost:3000`, and the Atlas site runs at `http://localhost:4321`. Keep the terminal running while using the app. Stop all servers with `Ctrl-C`.
 
-Run either server individually:
+Run any server individually:
 
 ```bash
 bun --cwd apps/server dev
 bun --cwd apps/web dev
+bun --cwd apps/atlas dev
 ```
 
 ### Database
