@@ -31,6 +31,7 @@
       "version": "0.0.0",
       "dependencies": {
         "@base-ui-components/react": "^1.0.0-rc.0",
+        "@proj/design": "workspace:*",
         "@proj/legend": "workspace:*",
         "@proj/server": "workspace:*",
         "@proj/shared": "workspace:*",
@@ -49,6 +50,10 @@
         "typescript": "latest",
         "vite": "latest",
       },
+    },
+    "packages/design": {
+      "name": "@proj/design",
+      "version": "0.0.0",
     },
     "packages/legend": {
       "name": "@proj/legend",
@@ -154,6 +159,8 @@
     "@oxc-project/types": ["@oxc-project/types@0.147.0", "", {}, "sha512-IJ3s6ltHLp45S0bh7phkX+gJO7A1Wuz2EaqpAhb8WjqDwbzMiWKHhyyT42tskaWjEYXtHtVCPpnBJVT9+dcRLg=="],
 
     "@playwright/test": ["@playwright/test@1.62.1", "", { "dependencies": { "playwright": "1.62.1" }, "bin": { "playwright": "cli.js" } }, "sha512-DTcUc8qii+cpHvtOwggMtBRMjKZHXYWdw8syRYu2vtzuq4Wxphqq4NfCs5Zt44L6mA8rfDfj+PHnxFc/FeK6mQ=="],
+
+    "@proj/design": ["@proj/design@workspace:packages/design"],
 
     "@proj/legend": ["@proj/legend@workspace:packages/legend"],
 

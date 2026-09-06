@@ -1,17 +1,14 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&family=Space+Grotesk:wght@500;600;700&display=swap");
+@import "@proj/design/tokens.css";
 @import "tailwindcss";
 
-@theme {
-  --color-surface: #f5f3ee;
-  --color-paper: #fffefa;
-  --color-ink: #24231f;
-  --color-muted: #77746c;
-  --color-line: #dedbd2;
-  --color-accent: #e35d3f;
-  --font-sans: "DM Sans", sans-serif;
-  --font-display: "Space Grotesk", sans-serif;
-  --font-mono: "DM Mono", monospace;
+@theme inline {
+  --color-surface: var(--design-surface);
+  --color-paper: var(--design-paper);
+  --color-ink: var(--design-ink);
+  --color-muted: var(--design-muted);
+  --color-line: var(--design-line);
+  --color-accent: var(--design-accent);
+  --font-sans: var(--design-font-sans);
+  --font-display: var(--design-font-display);
+  --font-mono: var(--design-font-mono);
 }
-
-* { box-sizing: border-box; }
-body { margin: 0; font-family: var(--font-sans); }
