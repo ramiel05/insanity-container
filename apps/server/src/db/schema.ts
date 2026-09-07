@@ -7,11 +7,11 @@ export const blueshifts = sqliteTable("blueshifts", {
   createdAt: integer("created_at", { mode: "number" }).notNull(),
 });
 
-export const stars = sqliteTable("stars", {
+export const blueshiftStars = sqliteTable("blueshift_stars", {
   id: text("id").primaryKey(),
   blueshiftId: text("blueshift_id").notNull().references(() => blueshifts.id, { onDelete: "cascade" }),
   title: text("title").notNull(),
-  completed: integer("completed", { mode: "boolean" }).notNull().default(false),
+  completedAt: integer("completed_at", { mode: "number" }),
   northStar: integer("north_star", { mode: "boolean" }).notNull().default(false),
   createdAt: integer("created_at", { mode: "number" }).notNull(),
 });
