@@ -2,17 +2,22 @@
   {
     "section": "Language",
     "term": "Blueshift",
-    "definition": "A goal-oriented body of work that gathers related Stars. The name evokes moving toward a star and the resulting blueshift in its observed frequencies."
+    "definition": "A goal-oriented body of work that gathers related Stars and can be completed. The name evokes moving toward a star and the resulting blueshift in its observed frequencies."
+  },
+  {
+    "section": "Language",
+    "term": "Redshift",
+    "definition": "An open-ended body of work that gathers related Stars, practiced indefinitely and never completed. Its Stars' completions reset at the start of each day. The name evokes receding from a star and the resulting redshift in its observed frequencies."
   },
   {
     "section": "Language",
     "term": "Star",
-    "definition": "A single, actionable piece of work belonging to one Blueshift."
+    "definition": "A single, actionable piece of work belonging to one Blueshift or Redshift."
   },
   {
     "section": "Language",
     "term": "North Star",
-    "definition": "A Star designated as current focus. North Star is a persistent designation: there is no limit on how many North Stars may exist at once."
+    "definition": "A Star of a Blueshift designated as current focus. North Star is a persistent designation: there is no limit on how many North Stars may exist at once."
   },
   {
     "section": "Atlas",

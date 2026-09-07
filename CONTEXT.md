@@ -5,15 +5,19 @@ Polaris is a local-first personal wayfinding workspace for turning larger goals 
 ## Language
 
 **Blueshift**:
-A goal-oriented body of work that gathers related Stars. The name evokes moving toward a star and the resulting blueshift in its observed frequencies.
+A goal-oriented body of work that gathers related Stars and can be completed. The name evokes moving toward a star and the resulting blueshift in its observed frequencies.
 _Avoid_: Project, project
 
+**Redshift**:
+An open-ended body of work that gathers related Stars, practiced indefinitely and never completed. Its Stars' completions reset at the start of each day. The name evokes receding from a star and the resulting redshift in its observed frequencies.
+_Avoid_: Habit, practice, recurring project
+
 **Star**:
-A single, actionable piece of work belonging to one Blueshift.
+A single, actionable piece of work belonging to one Blueshift or Redshift.
 _Avoid_: Task, todo, to-do, item
 
 **North Star**:
-A Star designated as current focus. North Star is a persistent designation: there is no limit on how many North Stars may exist at once.
+A Star of a Blueshift designated as current focus. North Star is a persistent designation: there is no limit on how many North Stars may exist at once.
 _Avoid_: Priority, featured task, daily task
 
 ### Atlas
