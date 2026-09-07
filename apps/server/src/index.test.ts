@@ -63,8 +63,11 @@ describe("wayfinding API", () => {
   });
 
   test("serves flat star member routes no more", async () => {
-    expect((await request(`/api/stars/${firstStar}`, { method: "PATCH", body: JSON.stringify({ completed: true }), headers: { "Content-Type": "application/json" } })).status).toBe(404);
-    expect((await request(`/api/stars/${firstStar}`, { method: "DELETE" })).status).toBe(404);
+    const create = await request(`/api/blueshifts/${secondBlueshift}/stars`, { method: "POST", body: JSON.stringify({ title: "Still here" }), headers: { "Content-Type": "application/json" } });
+    const star = await create.json();
+    expect((await request(`/api/stars/${star.id}`, { method: "PATCH", body: JSON.stringify({ completed: true }), headers: { "Content-Type": "application/json" } })).status).toBe(404);
+    expect((await request(`/api/stars/${star.id}`, { method: "DELETE" })).status).toBe(404);
+    expect((await (await request(`/api/blueshifts/${secondBlueshift}/stars`)).json()).map((s: { title: string }) => s.title)).toContain("Still here");
   });
 
   test("deleting a Blueshift cascades to its Stars", async () => {
