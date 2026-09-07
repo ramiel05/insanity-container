@@ -7,7 +7,7 @@
     "dev": "concurrently --kill-others --names server,web,atlas \"bun --cwd apps/server dev\" \"bun --cwd apps/web dev\" \"bun --cwd apps/atlas dev\"",
     "build": "bun --filter \"*\" build",
     "typecheck": "bun --filter \"*\" typecheck",
-    "test": "bun test apps/server/src packages/legend/src",
+    "test": "bun test apps/server/src apps/web/src packages/legend/src",
     "test:browser": "playwright test"
   },
   "devDependencies": {

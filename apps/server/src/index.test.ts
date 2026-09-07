@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { unlinkSync } from "node:fs";
 import { join } from "node:path";
 import { createDb } from "./db";
-import { blueshiftStars } from "./db/schema";
+import { blueshiftStars, redshiftStars } from "./db/schema";
 import { createApp } from "./index";
 
 const path = `/tmp/polaris-test-${crypto.randomUUID()}.sqlite`;
@@ -109,6 +109,96 @@ describe("wayfinding API", () => {
       { id: crypto.randomUUID(), blueshiftId: id, title: "Second", completedAt: null, northStar: false, createdAt: at },
     ]);
     const response = await request(`/api/blueshifts/${id}/stars`);
+    expect(response.status).toBe(200);
+    expect((await response.json()).map((star: { title: string }) => star.title)).toEqual(["First", "Second"]);
+  });
+});
+
+describe("redshift API", () => {
+  let firstRedshift = "";
+  let secondRedshift = "";
+
+  beforeAll(async () => {
+    firstRedshift = (await (await request("/api/redshifts", { method: "POST", body: JSON.stringify({ name: "Techno", goal: "Make noise" }), headers: { "Content-Type": "application/json" } })).json()).id;
+    secondRedshift = (await (await request("/api/redshifts", { method: "POST", body: JSON.stringify({ name: "Strength" }), headers: { "Content-Type": "application/json" } })).json()).id;
+  });
+
+  test("creates Redshifts with an optional aim and lists them in creation order", async () => {
+    const redshifts = await (await request("/api/redshifts")).json();
+    expect(redshifts.map((item: { name: string }) => item.name)).toEqual(["Techno", "Strength"]);
+    expect(redshifts[0].goal).toBe("Make noise");
+    expect(redshifts[1].goal).toBeNull();
+  });
+
+  test("creates Stars without any North Star representation", async () => {
+    const create = await request(`/api/redshifts/${firstRedshift}/stars`, { method: "POST", body: JSON.stringify({ title: "Free jam" }), headers: { "Content-Type": "application/json" } });
+    expect(create.status).toBe(201);
+    const star = await create.json();
+    expect(star).toMatchObject({ redshiftId: firstRedshift, title: "Free jam", completedAt: null });
+    expect("northStar" in star).toBe(false);
+    expect((await (await request(`/api/redshifts/${firstRedshift}/stars`)).json()).map((s: { title: string }) => s.title)).toEqual(["Free jam"]);
+  });
+
+  test("stamps completedAt on tick, updates it on a same-day retick, and nulls it on untick", async () => {
+    const create = await request(`/api/redshifts/${firstRedshift}/stars`, { method: "POST", body: JSON.stringify({ title: "Clock me" }), headers: { "Content-Type": "application/json" } });
+    const star = await create.json();
+    expect(star.completedAt).toBeNull();
+    const ticked = await (await request(`/api/redshifts/stars/${star.id}`, { method: "PATCH", body: JSON.stringify({ completed: true }), headers: { "Content-Type": "application/json" } })).json();
+    expect(ticked.completedAt).toBeNumber();
+    const reticked = await (await request(`/api/redshifts/stars/${star.id}`, { method: "PATCH", body: JSON.stringify({ completed: true }), headers: { "Content-Type": "application/json" } })).json();
+    expect(reticked.completedAt).toBeNumber();
+    expect(reticked.completedAt).toBeGreaterThanOrEqual(ticked.completedAt);
+    const unticked = await (await request(`/api/redshifts/stars/${star.id}`, { method: "PATCH", body: JSON.stringify({ completed: false }), headers: { "Content-Type": "application/json" } })).json();
+    expect(unticked.completedAt).toBeNull();
+  });
+
+  test("accepts a completed-only patch and rejects a northStar patch", async () => {
+    const create = await request(`/api/redshifts/${firstRedshift}/stars`, { method: "POST", body: JSON.stringify({ title: "Patch me" }), headers: { "Content-Type": "application/json" } });
+    const { id } = await create.json();
+    const completed = await request(`/api/redshifts/stars/${id}`, { method: "PATCH", body: JSON.stringify({ completed: true }), headers: { "Content-Type": "application/json" } });
+    expect(completed.status).toBe(200);
+    const northStar = await request(`/api/redshifts/stars/${id}`, { method: "PATCH", body: JSON.stringify({ northStar: true }), headers: { "Content-Type": "application/json" } });
+    expect(northStar.status).toBe(400);
+  });
+
+  test("returns not-found when listing Stars for an unknown Redshift", async () => {
+    const response = await request(`/api/redshifts/${crypto.randomUUID()}/stars`);
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({ error: "Redshift not found" });
+  });
+
+  test("returns kind-prefixed errors for unknown Star member routes", async () => {
+    const patch = await request(`/api/redshifts/stars/${crypto.randomUUID()}`, { method: "PATCH", body: JSON.stringify({ completed: true }), headers: { "Content-Type": "application/json" } });
+    expect(patch.status).toBe(404);
+    expect(await patch.json()).toEqual({ error: "Redshift star not found" });
+    const del = await request(`/api/redshifts/stars/${crypto.randomUUID()}`, { method: "DELETE" });
+    expect(del.status).toBe(404);
+    expect(await del.json()).toEqual({ error: "Redshift star not found" });
+  });
+
+  test("deleting a Redshift cascades to its Stars", async () => {
+    const created = await request("/api/redshifts", { method: "POST", body: JSON.stringify({ name: "Cascading" }), headers: { "Content-Type": "application/json" } });
+    const { id } = await created.json();
+    const star = await request(`/api/redshifts/${id}/stars`, { method: "POST", body: JSON.stringify({ title: "Cascade me" }), headers: { "Content-Type": "application/json" } });
+    const { id: starId } = await star.json();
+    expect(star.status).toBe(201);
+    expect((await request(`/api/redshifts/${id}`, { method: "DELETE" })).status).toBe(204);
+    expect((await request(`/api/redshifts/${id}/stars`)).status).toBe(404);
+    expect((await request(`/api/redshifts/${id}`)).status).toBe(404);
+    const orphaned = await request(`/api/redshifts/stars/${starId}`, { method: "PATCH", body: JSON.stringify({ completed: false }), headers: { "Content-Type": "application/json" } });
+    expect(orphaned.status).toBe(404);
+    expect(await orphaned.json()).toEqual({ error: "Redshift star not found" });
+  });
+
+  test("keeps Redshift Stars created within the same millisecond in insertion order", async () => {
+    const created = await request("/api/redshifts", { method: "POST", body: JSON.stringify({ name: "Ordered" }), headers: { "Content-Type": "application/json" } });
+    const { id } = await created.json();
+    const at = 1_700_000_000_000;
+    await storage.db.insert(redshiftStars).values([
+      { id: crypto.randomUUID(), redshiftId: id, title: "First", completedAt: null, createdAt: at },
+      { id: crypto.randomUUID(), redshiftId: id, title: "Second", completedAt: null, createdAt: at },
+    ]);
+    const response = await request(`/api/redshifts/${id}/stars`);
     expect(response.status).toBe(200);
     expect((await response.json()).map((star: { title: string }) => star.title)).toEqual(["First", "Second"]);
   });

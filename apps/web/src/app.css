@@ -8,6 +8,8 @@
   --color-muted: var(--design-muted);
   --color-line: var(--design-line);
   --color-accent: var(--design-accent);
+  --color-blue: var(--design-blue);
+  --color-red: var(--design-red);
   --font-sans: var(--design-font-sans);
   --font-display: var(--design-font-display);
   --font-mono: var(--design-font-mono);
