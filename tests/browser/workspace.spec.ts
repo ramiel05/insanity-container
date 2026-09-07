@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 test("creates a Blueshift and its first Star", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "North Stars" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "+ New Star" })).toBeDisabled();
+  await expect(page.getByText("Select a Blueshift or Redshift from the sidebar.")).toBeVisible();
   await page.getByRole("button", { name: "+ New Blueshift" }).click();
   await page.getByLabel("Name").fill("Morning orbit");
   await page.getByLabel(/Goal/).fill("Make progress");
