@@ -20,6 +20,14 @@ const storage = createDb(path);
 const app = createApp(storage.db);
 const request = (url: string, init?: RequestInit) => app.fetch(new Request(`http://test${url}`, init));
 
+describe("health probe", () => {
+  test("responds 200 with a JSON body at /health", async () => {
+    const response = await request("/health");
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ ok: true });
+  });
+});
+
 describe("wayfinding API", () => {
   let firstBlueshift = "";
   let secondBlueshift = "";

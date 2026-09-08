@@ -6,7 +6,7 @@ export default defineConfig({
   webServer: [
     {
       command: "bun --cwd apps/server dev",
-      url: "http://localhost:3000/api/blueshifts",
+      url: "http://localhost:3000/health",
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
     },

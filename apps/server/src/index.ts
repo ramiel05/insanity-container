@@ -6,7 +6,8 @@ import { createRedshiftRoutes, createRedshiftStarRoutes } from "./routes/redshif
 
 export function createApp(database = db) {
   return new Hono()
-  .use("/api/*", cors())
+   .use("/api/*", cors())
+   .get("/health", (c) => c.json({ ok: true }))
    .route("/api/blueshifts", createBlueshiftRoutes(database))
   .route("/api/blueshifts/stars", createBlueshiftStarRoutes(database))
   .route("/api/redshifts", createRedshiftRoutes(database))
