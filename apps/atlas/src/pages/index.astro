@@ -7,26 +7,38 @@ const slug = (value: string) =>
 
 const sections = [...new Set(legend.map((entry) => entry.section))];
 
-const guides = [
+type Enforcement = "enforced" | "guidance";
+
+const guides: { title: string; enforcement: Enforcement; practice: string }[] = [
   {
     title: "Turn goals into Blueshifts",
+    enforcement: "guidance",
     practice:
-      "When a goal takes shape, give it a name and a stated goal, and open a Blueshift to hold it. Everything that serves the goal — every Star — belongs to that Blueshift, so the goal always has one visible home.",
+      "When a goal takes shape, give it a name and a stated goal, and open a Blueshift to hold it. Everything that serves the goal — every Star — belongs to that Blueshift, so the goal always has one visible home. Polaris enforces that a Star belongs to exactly one Blueshift or Redshift; when you turn a goal into a Blueshift is up to you.",
   },
   {
     title: "Decompose Blueshifts into Stars",
+    enforcement: "guidance",
     practice:
       "Walk a Blueshift and ask what single, actionable pieces of work would move it forward. Write each one as a Star, so the Blueshift becomes a visible map of its own progress.",
   },
   {
-    title: "Choose one to three North Stars for the day",
+    title: "Designate North Stars for the day",
+    enforcement: "guidance",
     practice:
-      "At the start of the day, look across your Stars and designate one to three of them as North Stars. Let those few steer the day instead of the whole backlog.",
+      "At the start of the day, look across your Stars and designate the few that should steer the day instead of the whole backlog. One to three is good company, but it is advice, not a rule: the app permits any number, and nothing resets the designation. What Polaris does enforce is that a North Star is a persistent designation — it stays one until you change it — and that only Blueshift Stars can be designated: Redshift Stars cannot be North Stars at all.",
   },
   {
     title: "The end-of-day review",
+    enforcement: "guidance",
     practice:
       "At the end of the day, look back at your North Stars: what moved, what stalled, and what tomorrow's focus should be. Close the loop before the next day opens.",
+  },
+  {
+    title: "Practice endlessly with Redshifts",
+    enforcement: "enforced",
+    practice:
+      "Some work is never finished: a practice you return to rather than a goal you complete. Give it a name and an optional aim, open a Redshift, and add its recurring actions as Stars. Tick a Redshift Star and it is done for today; at the start of the next day it renders un-ticked again, in your timezone, with nothing for you to reset. Polaris enforces the mechanism: a Redshift has no completion to reach, a tick means today and nothing more, and a Redshift Star can never be a North Star.",
   },
 ];
 
@@ -99,11 +111,11 @@ const conceptId = (term: string) => `concept-${slug(term)}`;
         <h2>Guides</h2>
         {guides.map((guide) => (
           <article id={guideId(guide.title)}>
-            <h3>{guide.title}</h3>
+            <div class="guide-header">
+              <h3>{guide.title}</h3>
+              <span class={`enforcement-tag enforcement-${guide.enforcement}`}>{guide.enforcement}</span>
+            </div>
             <p>{guide.practice}</p>
-            <p class="guide-note">
-              Polaris does not enforce this guide: it is advice, not a mechanism.
-            </p>
           </article>
         ))}
       </section>
@@ -205,8 +217,32 @@ const conceptId = (term: string) => `concept-${slug(term)}`;
     line-height: 1.5;
   }
 
-  .guide-note {
+  .guide-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .guide-header h3 {
+    margin: 0;
+  }
+
+  .enforcement-tag {
+    font-family: var(--design-font-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    border: 1px solid var(--design-line);
+  }
+
+  .enforcement-enforced {
+    color: var(--design-accent);
+    border-color: var(--design-accent);
+  }
+
+  .enforcement-guidance {
     color: var(--design-muted);
-    font-size: 0.9rem;
   }
 </style>

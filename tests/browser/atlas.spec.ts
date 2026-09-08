@@ -29,22 +29,38 @@ test("the Legend section includes every concept from the artifact", async ({ pag
   }
 });
 
-test("each Guide anchor resolves from the sidebar", async ({ page }) => {
+const guideTitles = [
+  "Turn goals into Blueshifts",
+  "Decompose Blueshifts into Stars",
+  "Designate North Stars for the day",
+  "The end-of-day review",
+  "Practice endlessly with Redshifts",
+];
+
+test("each Guide anchor resolves from the sidebar and carries an enforcement tag", async ({ page }) => {
   await page.goto(atlasURL);
   const sidebar = page.getByRole("navigation", { name: "Atlas contents" });
-  const guideTitles = [
-    "Turn goals into Blueshifts",
-    "Decompose Blueshifts into Stars",
-    "Choose one to three North Stars for the day",
-    "The end-of-day review",
-  ];
   for (const title of guideTitles) {
     await sidebar.getByRole("link", { name: title }).click();
     const guide = page.locator(`#guide-${slug(title)}`);
     await expect(guide).toBeVisible();
     await expect(guide.getByRole("heading", { name: title })).toBeVisible();
-    await expect(guide).toContainText(/Polaris does not enforce this guide/i);
+    await expect(guide.locator(".enforcement-tag")).toHaveText(/^(enforced|guidance)$/i);
   }
+});
+
+test("no guide claims enforcement is absent across the board", async ({ page }) => {
+  await page.goto(atlasURL);
+  await expect(page.getByText(/Polaris does not enforce this guide/i)).toHaveCount(0);
+});
+
+test("the Redshift guide is marked enforced and the North Star guide permits exceeding one to three", async ({ page }) => {
+  await page.goto(atlasURL);
+  const redshiftGuide = page.locator(`#guide-${slug("Practice endlessly with Redshifts")}`);
+  await expect(redshiftGuide.locator(".enforcement-tag")).toHaveText(/enforced/i);
+  const northStarGuide = page.locator(`#guide-${slug("Designate North Stars for the day")}`);
+  await expect(northStarGuide).toContainText(/one to three is .*advice/i);
+  await expect(northStarGuide.locator(".enforcement-tag")).toHaveText(/guidance/i);
 });
 
 function slug(value: string) {
