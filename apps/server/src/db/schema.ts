@@ -30,3 +30,8 @@ export const redshiftStars = sqliteTable("redshift_stars", {
   completedAt: integer("completed_at", { mode: "number" }),
   createdAt: integer("created_at", { mode: "number" }).notNull(),
 });
+
+export const settings = sqliteTable("settings", {
+  id: integer("id").primaryKey(),
+  timezone: text("timezone"),
+});

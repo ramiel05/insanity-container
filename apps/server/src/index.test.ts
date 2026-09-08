@@ -212,4 +212,19 @@ describe("redshift API", () => {
   });
 });
 
+describe("settings API", () => {
+  test("lazily creates the singleton with a null timezone", async () => {
+    const response = await request("/api/settings");
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ id: 1, timezone: null });
+  });
+
+  test("persists an IANA timezone that a later GET returns", async () => {
+    const patch = await request("/api/settings", { method: "PATCH", body: JSON.stringify({ timezone: "Pacific/Auckland" }), headers: { "Content-Type": "application/json" } });
+    expect(patch.status).toBe(200);
+    expect(await patch.json()).toEqual({ id: 1, timezone: "Pacific/Auckland" });
+    expect(await (await request("/api/settings")).json()).toEqual({ id: 1, timezone: "Pacific/Auckland" });
+  });
+});
+
 afterAll(() => { storage.sqlite.close(); unlinkSync(path); });

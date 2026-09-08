@@ -58,3 +58,15 @@ export type CreateRedshift = z.infer<typeof createRedshiftSchema>;
 export type RedshiftStar = z.infer<typeof redshiftStarSchema>;
 export type CreateRedshiftStar = z.infer<typeof createRedshiftStarSchema>;
 export type UpdateRedshiftStar = z.infer<typeof updateRedshiftStarSchema>;
+
+export const settingsSchema = z.object({
+  id: z.number(),
+  timezone: z.string().nullable(),
+});
+
+export const updateSettingsSchema = z.object({
+  timezone: z.string().nullable(),
+});
+
+export type Settings = z.infer<typeof settingsSchema>;
+export type UpdateSettings = z.infer<typeof updateSettingsSchema>;

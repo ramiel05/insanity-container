@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import { db } from "./db";
 import { createBlueshiftRoutes, createBlueshiftStarRoutes, createNorthStarRoutes } from "./routes/blueshifts";
 import { createRedshiftRoutes, createRedshiftStarRoutes } from "./routes/redshifts";
+import { createSettingsRoutes } from "./routes/settings";
 
 export function createApp(database = db) {
   return new Hono()
@@ -12,7 +13,8 @@ export function createApp(database = db) {
   .route("/api/blueshifts/stars", createBlueshiftStarRoutes(database))
   .route("/api/redshifts", createRedshiftRoutes(database))
   .route("/api/redshifts/stars", createRedshiftStarRoutes(database))
-  .route("/api/north-stars", createNorthStarRoutes(database));
+   .route("/api/north-stars", createNorthStarRoutes(database))
+   .route("/api/settings", createSettingsRoutes(database));
 }
 
 const routes = createApp();
