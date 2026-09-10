@@ -33,6 +33,37 @@ rm apps/server/sqlite.db && bun --cwd apps/server db:push
 
 Tests push the schema into a temp file automatically; no other setup is needed. See `docs/adr/0003-schema-ownership-and-database-lifecycle.md`.
 
+### Lint and format
+
+Linting and formatting are oxc-based and configured at the repo root: `.oxlintrc.json` (aggressive categories + type-aware linting via `oxlint-tsgolint`) and `.oxfmtrc.json` (line width 120, semicolons). Run validation from the repository root:
+
+```bash
+bun run lint
+bun run format:check
+```
+
+Auto-format (also run this before `format:check` if you touched anything):
+
+```bash
+bun run format
+```
+
+Rules to know when writing code:
+
+- `.oxfmtrc.json` ignores Markdown on purpose — ADRs in `docs/adr/` are immutable, so the formatter never touches prose files.
+- `prefer-readonly-parameter-types` runs with `ignoreInferredTypes`, and `lib`/`package` types that cannot be made readonly (`Response`, `RequestInit`, `Error`, `ReactNode`, `UseQueryResult`, `UseMutationResult`, `ZodType`) are on its `allow` list. Object-typed parameters you write yourself must have `readonly` properties.
+- Framework-required default exports (`playwright.config.ts`, `vite.config.ts`, `astro.config.mjs`, `drizzle.config.ts`) are exempt from `no-default-export` via a scoped override in `.oxlintrc.json`. Everywhere else, use named exports.
+- `react/react-in-jsx-scope` is off (`jsx: "react-jsx"`). Import `React` only as a type (`import type React from "react"`) when a signature needs `React.JSX.Element` or `React.ReactNode`.
+- The web API layer (`apps/web/src/lib/api.ts`) wraps `hc<AppType>` in named functions. oxlint-tsgolint types that client as `error`, so `no-unsafe-*` is off for that file only. Call sites use the named functions; do not re-export the client. Web's tsconfig maps the server `#` subpaths so that `AppType` import can follow into server source. Route factories and `createApp` must not annotate `: Hono` — that wipes the inferred route tree — so explicit-return-type rules are off for those files.
+
+### Fail loudly
+
+If a value cannot be missing given the types or the surrounding logic (a regex capture the pattern always produces, an index the algorithm requires), throw. Do not substitute `""`, `0`, `[]`, or `null` to keep going.
+
+### Dependency version policy
+
+Dependencies are pinned with carets to the version currently in use — never use `latest` as a version range. When adding or upgrading a dependency, resolve the concrete version (`npm view <pkg> version`) and record it in the relevant `package.json`.
+
 ### Legend
 
 `CONTEXT.md` is the canonical glossary, and `packages/legend` parses it into a checked-in generated artifact (`packages/legend/src/legend.json`). After editing `CONTEXT.md`, run `bun run generate` from the repository root before testing or building; the drift-guard test fails on a stale artifact. See `docs/adr/0004-legend-generated-from-glossary.md` and `docs/adr/0005-legend-generator-runs-on-demand.md`.

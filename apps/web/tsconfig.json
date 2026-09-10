@@ -1,6 +1,15 @@
 {
   "extends": "../../tsconfig.json",
-  "compilerOptions": { "jsx": "react-jsx", "types": ["bun"], "lib": ["ES2022", "DOM", "DOM.Iterable"] },
-  "include": ["src", "vite.config.ts"],
-  "exclude": ["../../apps/server/src"]
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "types": ["bun"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "paths": {
+      "#lib/*": ["./src/lib/*"],
+      "#db": ["../server/src/db/index.ts"],
+      "#db/*": ["../server/src/db/*"],
+      "#routes/*": ["../server/src/routes/*"]
+    }
+  },
+  "include": ["src", "vite.config.ts"]
 }

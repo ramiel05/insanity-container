@@ -1,11 +1,18 @@
 import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
+import { z } from "zod";
 
-const legend = JSON.parse(
-  readFileSync("packages/legend/src/legend.json", "utf8"),
-) as { section: string; term: string; definition: string }[];
+const legendEntrySchema = z.object({ section: z.string(), term: z.string(), definition: z.string() });
+const legend = z.array(legendEntrySchema).parse(JSON.parse(readFileSync("packages/legend/src/legend.json", "utf8")));
 
 const atlasURL = "http://localhost:4173";
+
+function slug(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/gu, "-")
+    .replace(/(^-|-$)/gu, "");
+}
 
 test("the sidebar links to every Legend concept", async ({ page }) => {
   await page.goto(atlasURL);
@@ -45,24 +52,22 @@ test("each Guide anchor resolves from the sidebar and carries an enforcement tag
     const guide = page.locator(`#guide-${slug(title)}`);
     await expect(guide).toBeVisible();
     await expect(guide.getByRole("heading", { name: title })).toBeVisible();
-    await expect(guide.locator(".enforcement-tag")).toHaveText(/^(enforced|guidance)$/i);
+    await expect(guide.locator(".enforcement-tag")).toHaveText(/^(enforced|guidance)$/iu);
   }
 });
 
 test("no guide claims enforcement is absent across the board", async ({ page }) => {
   await page.goto(atlasURL);
-  await expect(page.getByText(/Polaris does not enforce this guide/i)).toHaveCount(0);
+  await expect(page.getByText(/Polaris does not enforce this guide/iu)).toHaveCount(0);
 });
 
-test("the Redshift guide is marked enforced and the North Star guide permits exceeding one to three", async ({ page }) => {
+test("the Redshift guide is marked enforced and the North Star guide permits exceeding one to three", async ({
+  page,
+}) => {
   await page.goto(atlasURL);
   const redshiftGuide = page.locator(`#guide-${slug("Practice endlessly with Redshifts")}`);
-  await expect(redshiftGuide.locator(".enforcement-tag")).toHaveText(/enforced/i);
+  await expect(redshiftGuide.locator(".enforcement-tag")).toHaveText(/enforced/iu);
   const northStarGuide = page.locator(`#guide-${slug("Designate North Stars for the day")}`);
-  await expect(northStarGuide).toContainText(/one to three is .*advice/i);
-  await expect(northStarGuide.locator(".enforcement-tag")).toHaveText(/guidance/i);
+  await expect(northStarGuide).toContainText(/one to three is .*advice/iu);
+  await expect(northStarGuide.locator(".enforcement-tag")).toHaveText(/guidance/iu);
 });
-
-function slug(value: string) {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-}

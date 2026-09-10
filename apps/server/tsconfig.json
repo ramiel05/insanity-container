@@ -1,5 +1,12 @@
 {
   "extends": "../../tsconfig.json",
-  "compilerOptions": { "types": ["bun"] },
+  "compilerOptions": {
+    "types": ["bun"],
+    "paths": {
+      "#db": ["./src/db/index.ts"],
+      "#db/*": ["./src/db/*"],
+      "#routes/*": ["./src/routes/*"]
+    }
+  },
   "include": ["src", "drizzle.config.ts"]
 }

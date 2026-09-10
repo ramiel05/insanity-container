@@ -4,9 +4,9 @@ export interface LegendEntry {
   definition: string;
 }
 
-const headingPattern = /^(#{1,6})\s+(.+)$/;
-const termPattern = /^\*\*(.+?)\*\*:\s*$/;
-const avoidPattern = /^_Avoid_:\s*(.*)$/;
+const headingPattern = /^(#{1,6})\s+(.+)$/u;
+const termPattern = /^\*\*(.+?)\*\*:\s*$/u;
+const avoidPattern = /^_Avoid_:\s*(.*)$/u;
 
 /**
  * Parses the glossary from CONTEXT.md into an ordered list of Legend entries.
@@ -18,7 +18,7 @@ export function parseGlossary(source: string): LegendEntry[] {
   let term: string | null = null;
   let definitionLines: string[] = [];
 
-  const flush = () => {
+  const flush = (): void => {
     if (term !== null && definitionLines.length > 0) {
       entries.push({ section, term, definition: definitionLines.join(" ").trim() });
     }
@@ -30,13 +30,21 @@ export function parseGlossary(source: string): LegendEntry[] {
     const heading = headingPattern.exec(line);
     if (heading) {
       flush();
-      section = heading[2].trim();
+      const title = heading[2];
+      if (typeof title !== "string") {
+        throw new Error("headingPattern always captures group 2");
+      }
+      section = title.trim();
       continue;
     }
     const termMatch = termPattern.exec(line);
     if (termMatch) {
       flush();
-      term = termMatch[1].trim();
+      const name = termMatch[1];
+      if (typeof name !== "string") {
+        throw new Error("termPattern always captures group 1");
+      }
+      term = name.trim();
       continue;
     }
     if (line.trim() === "") {

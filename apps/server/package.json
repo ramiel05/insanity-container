@@ -3,12 +3,18 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "imports": {
+    "#db": "./src/db/index.ts",
+    "#db/*": "./src/db/*",
+    "#routes/*": "./src/routes/*"
+  },
   "exports": {
     ".": "./src/index.ts"
   },
   "scripts": {
     "dev": "bun --watch src/index.ts",
     "db:push": "drizzle-kit push --force",
+    "test": "bun test src",
     "start": "bun src/index.ts",
     "typecheck": "tsc --noEmit"
   },
@@ -20,9 +26,9 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@types/bun": "latest",
+    "@types/bun": "^1.4.1",
     "better-sqlite3": "^13.0.3",
     "drizzle-kit": "^0.31.4",
-    "typescript": "latest"
+    "typescript": "^7.0.2"
   }
 }

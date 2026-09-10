@@ -6,7 +6,7 @@ import { parseGlossary } from "./parse";
 
 const repoRoot = join(import.meta.dir, "..", "..", "..");
 const glossary = readFileSync(join(repoRoot, "CONTEXT.md"), "utf8");
-const generated = JSON.parse(readFileSync(join(import.meta.dir, "legend.json"), "utf8"));
+const generated: unknown = JSON.parse(readFileSync(join(import.meta.dir, "legend.json"), "utf8"));
 
 describe("parseGlossary", () => {
   test("emits ordered entries tagged by section", () => {

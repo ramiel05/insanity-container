@@ -14,5 +14,10 @@
   --design-font-mono: "DM Mono", monospace;
 }
 
-* { box-sizing: border-box; }
-body { margin: 0; font-family: var(--design-font-sans); }
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-family: var(--design-font-sans);
+}

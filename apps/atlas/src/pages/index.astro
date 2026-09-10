@@ -2,8 +2,8 @@
 import "@proj/design/tokens.css";
 import { legend } from "@proj/legend";
 
-const slug = (value: string) =>
-  value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+const slug = (value: string): string =>
+  value.toLowerCase().replace(/[^a-z0-9]+/gu, "-").replace(/(^-|-$)/gu, "");
 
 const sections = [...new Set(legend.map((entry) => entry.section))];
 
@@ -42,8 +42,8 @@ const guides: { title: string; enforcement: Enforcement; practice: string }[] = 
   },
 ];
 
-const guideId = (title: string) => `guide-${slug(title)}`;
-const conceptId = (term: string) => `concept-${slug(term)}`;
+const guideId = (title: string): string => `guide-${slug(title)}`;
+const conceptId = (term: string): string => `concept-${slug(term)}`;
 ---
 
 <!doctype html>

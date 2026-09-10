@@ -1,17 +1,27 @@
 {
   "name": "project-root",
   "private": true,
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "generate": "bun --cwd packages/legend generate",
     "dev": "concurrently --kill-others --names server,web,atlas \"bun --cwd apps/server dev\" \"bun --cwd apps/web dev\" \"bun --cwd apps/atlas dev\"",
     "build": "bun --filter \"*\" build",
     "typecheck": "bun --filter \"*\" typecheck",
-    "test": "bun test apps/server/src apps/web/src packages/legend/src",
+    "lint": "oxlint",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
+    "test": "bun --filter \"*\" test",
     "test:browser": "playwright test"
   },
   "devDependencies": {
+    "@playwright/test": "^1.55.0",
     "concurrently": "^9.2.1",
-    "@playwright/test": "^1.55.0"
+    "oxfmt": "^0.67.0",
+    "oxlint": "^1.82.0",
+    "oxlint-tsgolint": "^7.0.2001",
+    "zod": "^3.25.76"
   }
 }

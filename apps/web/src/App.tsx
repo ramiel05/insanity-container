@@ -1,82 +1,64 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { BlueshiftStar, RedshiftStar } from "@proj/shared";
-import { Dialog } from "@base-ui-components/react/dialog";
+import type React from "react";
 import { useState } from "react";
-import { api, unwrap } from "./lib/api";
-import { effectiveTimeZone, isTickedToday } from "./lib/day";
-import Legend from "./components/Legend";
+import { Header } from "./components/Header";
+import { Legend } from "./components/Legend";
+import { QueryStateBanner } from "./components/QueryStateBanner";
+import { Workspace } from "./components/Workspace";
+import { useShiftMutations, useStarMutations, useWorkspaceQueries } from "#lib/hooks";
+import type { ConfirmState, Kind, ModalKind, Selected } from "#lib/kinds";
 
-type Kind = "blueshift" | "redshift";
-type Selected = { kind: Kind; id: string } | null;
-
-export default function App() {
-  const client = useQueryClient();
+export function App(): React.JSX.Element {
   const [selected, setSelected] = useState<Selected>(null);
-  const [modal, setModal] = useState<"blueshift" | "redshift" | "star" | "settings" | null>(null);
-  const blueshifts = useQuery({ queryKey: ["blueshifts"], queryFn: async () => unwrap(await api.api.blueshifts.$get()) });
-  const redshifts = useQuery({ queryKey: ["redshifts"], queryFn: async () => unwrap(await api.api.redshifts.$get()) });
-  const selectedBlueshift = blueshifts.data?.find((item) => item.id === selected?.id && selected.kind === "blueshift");
-  const selectedRedshift = redshifts.data?.find((item) => item.id === selected?.id && selected.kind === "redshift");
-  const stars = useQuery({ queryKey: ["stars", selected?.id, selected?.kind], enabled: selected?.kind === "blueshift", queryFn: async () => unwrap(await api.api.blueshifts[":id"].stars.$get({ param: { id: selected!.id } })) });
-  const redshiftStars = useQuery({ queryKey: ["redshift-stars", selected?.id, selected?.kind], enabled: selected?.kind === "redshift", queryFn: async () => unwrap(await api.api.redshifts[":id"].stars.$get({ param: { id: selected!.id } })) });
-  const northStars = useQuery({ queryKey: ["north-stars"], queryFn: async () => unwrap(await api.api["north-stars"].$get()) });
-  const settings = useQuery({ queryKey: ["settings"], queryFn: async () => unwrap(await api.api.settings.$get()) });
-  const timeZone = settings.data?.timezone ?? effectiveTimeZone();
-  const refresh = () => { client.invalidateQueries({ queryKey: ["blueshifts"] }); client.invalidateQueries({ queryKey: ["redshifts"] }); client.invalidateQueries({ queryKey: ["stars"] }); client.invalidateQueries({ queryKey: ["redshift-stars"] }); client.invalidateQueries({ queryKey: ["north-stars"] }); };
-  const createBlueshift = useMutation({ mutationFn: async (input: { name: string; goal?: string }) => unwrap(await api.api.blueshifts.$post({ json: input })), onSuccess: (item) => { setSelected({ kind: "blueshift", id: item.id }); setModal(null); refresh(); } });
-  const createRedshift = useMutation({ mutationFn: async (input: { name: string; goal?: string }) => unwrap(await api.api.redshifts.$post({ json: input })), onSuccess: (item) => { setSelected({ kind: "redshift", id: item.id }); setModal(null); refresh(); } });
-  const createStar = useMutation({ mutationFn: async (title: string) => unwrap(await api.api.blueshifts[":id"].stars.$post({ param: { id: selected!.id }, json: { title } })), onSuccess: () => { setModal(null); refresh(); } });
-  const createRedshiftStar = useMutation({ mutationFn: async (title: string) => unwrap(await api.api.redshifts[":id"].stars.$post({ param: { id: selected!.id }, json: { title } })), onSuccess: () => { setModal(null); refresh(); } });
-  const updateStar = useMutation({ mutationFn: async ({ id, ...input }: { id: string; completed?: boolean; northStar?: boolean }) => unwrap(await api.api.blueshifts.stars[":id"].$patch({ param: { id }, json: input })), onSuccess: refresh });
-  const updateRedshiftStar = useMutation({ mutationFn: async ({ id, completed }: { id: string; completed: boolean }) => unwrap(await api.api.redshifts.stars[":id"].$patch({ param: { id }, json: { completed } })), onSuccess: refresh });
-  const deleteStar = useMutation({ mutationFn: async (id: string) => unwrap(await api.api.blueshifts.stars[":id"].$delete({ param: { id } })), onSuccess: refresh });
-  const deleteRedshiftStar = useMutation({ mutationFn: async (id: string) => unwrap(await api.api.redshifts.stars[":id"].$delete({ param: { id } })), onSuccess: refresh });
-  const deleteBlueshift = useMutation({ mutationFn: async (id: string) => unwrap(await api.api.blueshifts[":id"].$delete({ param: { id } })), onSuccess: (_data, id) => { if (selected?.id === id) setSelected(null); refresh(); } });
-  const deleteRedshift = useMutation({ mutationFn: async (id: string) => unwrap(await api.api.redshifts[":id"].$delete({ param: { id } })), onSuccess: (_data, id) => { if (selected?.id === id) setSelected(null); refresh(); } });
-  const updateSettings = useMutation({ mutationFn: async (timezone: string | null) => unwrap(await api.api.settings.$patch({ json: { timezone } })), onSuccess: () => { setModal(null); client.invalidateQueries({ queryKey: ["settings"] }); } });
+  const [modal, setModal] = useState<ModalKind>(null);
+  const [confirm, setConfirm] = useState<ConfirmState | null>(null);
+  const workspace = useWorkspaceQueries(selected);
+  const shiftMutations = useShiftMutations({
+    refresh: workspace.refresh,
+    onSelected: (kind: Kind, id: string) => {
+      setSelected({ kind, id });
+    },
+    onDeleted: (kind: Kind, id: string) => {
+      if (selected?.kind === kind && selected.id === id) setSelected(null);
+    },
+    onCloseModal: () => {
+      setModal(null);
+    },
+  });
+  const starMutations = useStarMutations(workspace.refresh);
 
-  const queryError = blueshifts.error ?? redshifts.error ?? northStars.error ?? stars.error ?? redshiftStars.error ?? settings.error;
-  const starChangeError = updateStar.error ?? deleteStar.error ?? updateRedshiftStar.error ?? deleteRedshiftStar.error;
+  const confirmDelete = (message: string, action: () => void): void => {
+    setConfirm({ message, action });
+    setModal("confirm");
+  };
 
-  return <main className="min-h-screen bg-surface text-ink"><div className="mx-auto max-w-6xl px-5 py-8 sm:px-10 sm:py-12">
-    <header className="mb-10 flex items-end justify-between gap-4"><div><p className="mb-2 font-mono text-xs uppercase tracking-[0.2em] text-accent">Polaris / local command center</p><h1 className="font-display text-5xl font-bold tracking-tight sm:text-7xl">Find your way.</h1><p className="mt-4 text-muted">Big direction. Next useful move.</p></div><div className="flex gap-2"><button onClick={() => setModal("blueshift")} className="rounded-xl bg-blue px-4 py-3 text-sm font-bold text-white hover:bg-blue/90">+ New Blueshift</button><button onClick={() => setModal("redshift")} className="rounded-xl bg-red px-4 py-3 text-sm font-bold text-white hover:bg-red/90">+ New Redshift</button><button aria-label="Settings" onClick={() => setModal("settings")} className="rounded-xl border border-line px-3 py-3 text-muted hover:border-accent hover:text-accent"><GearIcon /></button></div></header>
-    {queryError && <section role="alert" className="mb-8 rounded-3xl border border-accent bg-accent/10 p-5"><p className="font-bold">Couldn't load your workspace.</p><p className="mt-1 text-sm">{queryError.message}</p><p className="mt-2 text-sm text-muted">If the API isn't running, start it locally with <code className="font-mono">bun run dev</code> (API on http://localhost:3000).</p></section>}
-    {!queryError && (blueshifts.isPending || redshifts.isPending || northStars.isPending) && <p role="status" className="mb-8 text-muted">Loading…</p>}
-     <Legend />
-    <section aria-labelledby="north-stars-heading" className="mb-8 rounded-3xl bg-ink p-5 text-paper shadow-xl sm:p-7"><div className="mb-5 flex items-center justify-between"><h2 id="north-stars-heading" className="font-display text-2xl font-bold">North Stars</h2><span className="font-mono text-xs text-paper/60">{northStars.isError ? "—" : northStars.data?.length ?? 0} in focus</span></div>{starChangeError && <p role="alert" className="mb-4 rounded-xl bg-accent/20 p-3 text-sm text-paper">Couldn't save a Star: {starChangeError.message}</p>}<div className="grid gap-3 sm:grid-cols-2">{northStars.data?.map((star) => <StarRow key={star.id} star={star} onSelect={() => setSelected({ kind: "blueshift", id: star.blueshiftId })} onToggle={(completed) => updateStar.mutate({ id: star.id, completed })} onDelete={() => window.confirm(`Delete ${star.title}?`) && deleteStar.mutate(star.id)} dark />)}</div></section>
-     <div className="grid gap-6 lg:grid-cols-[18rem_1fr]"><aside className="rounded-3xl border border-line bg-paper p-5"><div className="mb-4 flex items-center justify-between"><h2 className="font-display text-xl font-bold text-blue">Blueshifts</h2><span className="font-mono text-xs text-muted">{blueshifts.isError ? "—" : blueshifts.data?.length ?? 0}</span></div><div className="space-y-2">{blueshifts.data?.map((item) => <ShiftRow key={item.id} kind="blueshift" name={item.name} goal={item.goal} selected={selected?.kind === "blueshift" && selected.id === item.id} onSelect={() => setSelected({ kind: "blueshift", id: item.id })} onDelete={() => window.confirm(`Delete the Blueshift "${item.name}"?`) && deleteBlueshift.mutate(item.id)} />)}{blueshifts.data?.length === 0 && <p className="text-sm text-muted">None yet.</p>}</div>{deleteBlueshift.isError && <p role="alert" className="mt-4 rounded-xl bg-blue/10 p-3 text-sm text-blue">Couldn't delete the Blueshift: {deleteBlueshift.error?.message}</p>}<div className="mb-4 mt-7 flex items-center justify-between"><h2 className="font-display text-xl font-bold text-red">Redshifts</h2><span className="font-mono text-xs text-muted">{redshifts.isError ? "—" : redshifts.data?.length ?? 0}</span></div><div className="space-y-2">{redshifts.data?.map((item) => <ShiftRow key={item.id} kind="redshift" name={item.name} goal={item.goal} selected={selected?.kind === "redshift" && selected.id === item.id} onSelect={() => setSelected({ kind: "redshift", id: item.id })} onDelete={() => window.confirm(`Delete the Redshift "${item.name}"?`) && deleteRedshift.mutate(item.id)} />)}{redshifts.data?.length === 0 && <p className="text-sm text-muted">None yet.</p>}</div>{deleteRedshift.isError && <p role="alert" className="mt-4 rounded-xl bg-red/10 p-3 text-sm text-red">Couldn't delete the Redshift: {deleteRedshift.error?.message}</p>}</aside>
-       <section className="rounded-3xl border border-line bg-paper p-5 sm:p-7">{selectedBlueshift ? <><div className="mb-7 flex items-start justify-between gap-3"><div><p className="font-mono text-xs uppercase tracking-widest text-blue">Selected Blueshift</p><h2 className="mt-1 font-display text-3xl font-bold">{selectedBlueshift.name}</h2>{selectedBlueshift.goal && <p className="mt-2 max-w-xl text-muted">{selectedBlueshift.goal}</p>}</div><button onClick={() => setModal("star")} className="rounded-xl bg-ink px-4 py-3 text-sm font-bold text-paper hover:bg-ink/90">+ New Star</button></div>{starChangeError && <p role="alert" className="mb-4 rounded-xl bg-accent/10 p-3 text-sm text-accent">Couldn't save a Star: {starChangeError.message}</p>}<div className="space-y-3">{stars.data?.map((star) => <StarRow key={star.id} star={star} onToggle={(completed) => updateStar.mutate({ id: star.id, completed })} onNorthStar={(northStar) => updateStar.mutate({ id: star.id, northStar })} onDelete={() => window.confirm(`Delete the Star "${star.title}"?`) && deleteStar.mutate(star.id)} />)}</div></> : selectedRedshift ? <><div className="mb-7 flex items-start justify-between gap-3"><div><p className="font-mono text-xs uppercase tracking-widest text-red">Selected Redshift</p><h2 className="mt-1 font-display text-3xl font-bold">{selectedRedshift.name}</h2>{selectedRedshift.goal && <p className="mt-2 max-w-xl text-muted">{selectedRedshift.goal}</p>}</div><button onClick={() => setModal("star")} className="rounded-xl bg-ink px-4 py-3 text-sm font-bold text-paper hover:bg-ink/90">+ New Star</button></div>{starChangeError && <p role="alert" className="mb-4 rounded-xl bg-accent/10 p-3 text-sm text-accent">Couldn't save a Star: {starChangeError.message}</p>}<div className="space-y-3">{redshiftStars.data?.map((star) => <RedshiftStarRow key={star.id} star={star} timeZone={timeZone} onToggle={(completed) => updateRedshiftStar.mutate({ id: star.id, completed })} onDelete={() => window.confirm(`Delete the Star "${star.title}"?`) && deleteRedshiftStar.mutate(star.id)} />)}</div></> : <div className="flex min-h-64 items-center justify-center" aria-label="No Blueshift or Redshift selected"><p className="text-muted">Select a Blueshift or Redshift from the sidebar.</p></div>}</section></div>
-    {modal === "blueshift" && <ShiftModal label="Blueshift" error={createBlueshift.error?.message} onClose={() => setModal(null)} onSubmit={(input) => createBlueshift.mutate(input)} />}{modal === "redshift" && <ShiftModal label="Redshift" error={createRedshift.error?.message} onClose={() => setModal(null)} onSubmit={(input) => createRedshift.mutate(input)} />}{modal === "star" && selectedBlueshift && <StarModal label="Blueshift" parent={selectedBlueshift.name} error={createStar.error?.message} onClose={() => setModal(null)} onSubmit={(title) => createStar.mutate(title)} />}{modal === "star" && selectedRedshift && <StarModal label="Redshift" parent={selectedRedshift.name} error={createRedshiftStar.error?.message} onClose={() => setModal(null)} onSubmit={(title) => createRedshiftStar.mutate(title)} />}{modal === "settings" && settings.data && <SettingsModal timezone={settings.data.timezone} error={updateSettings.error?.message} onClose={() => setModal(null)} onSubmit={(timezone) => updateSettings.mutate(timezone)} />}
-  </div></main>;
+  return (
+    <main className="min-h-screen bg-surface text-ink">
+      <div className="mx-auto max-w-6xl px-5 py-8 sm:px-10 sm:py-12">
+        <Header
+          onNewBlueshift={() => {
+            setModal("blueshift");
+          }}
+          onNewRedshift={() => {
+            setModal("redshift");
+          }}
+          onOpenSettings={() => {
+            setModal("settings");
+          }}
+        />
+        <QueryStateBanner error={workspace.queryError} pending={workspace.pending} />
+        <Legend />
+        <Workspace
+          workspace={workspace}
+          shiftMutations={shiftMutations}
+          starMutations={starMutations}
+          selected={selected}
+          modal={modal}
+          confirm={confirm}
+          setSelected={setSelected}
+          setModal={setModal}
+          confirmDelete={confirmDelete}
+        />
+      </div>
+    </main>
+  );
 }
-
-function ShiftRow({ kind, name, goal, selected, onSelect, onDelete }: { kind: Kind; name: string; goal: string | null; selected: boolean; onSelect: () => void; onDelete: () => void }) {
-  const isRedshift = kind === "redshift";
-  const selectedClass = isRedshift ? "bg-red/10 text-red" : "bg-blue/10 text-blue";
-  const dotClass = isRedshift ? "bg-red" : "bg-blue";
-  return <div className={`group flex items-start gap-2 rounded-2xl p-3 ${selected ? selectedClass : "hover:bg-surface"}`}><span className={`mt-2 size-2 shrink-0 rounded-full ${dotClass}`} /><button className="min-w-0 flex-1 text-left" onClick={onSelect}><strong className="block truncate">{name}</strong>{goal && <span className="mt-1 block truncate text-xs text-muted">{goal}</span>}</button><button aria-label={`Delete ${name}`} title={`Delete ${isRedshift ? "Redshift" : "Blueshift"}`} onClick={onDelete} className="px-1 text-muted opacity-60 hover:text-accent"><TrashIcon /></button></div>;
-}
-
-function StarRow({ star, onToggle, onNorthStar, onSelect, onDelete, dark = false }: { star: BlueshiftStar; onToggle: (value: boolean) => void; onNorthStar?: (value: boolean) => void; onSelect?: () => void; onDelete: () => void; dark?: boolean }) {
-  const completed = star.completedAt != null;
-  return <div className={`flex items-center gap-3 rounded-2xl border p-3 ${dark ? "border-paper/15 bg-paper/10" : "border-line"}`}><input aria-label={`Complete ${star.title}`} type="checkbox" checked={completed} onChange={(event) => onToggle(event.target.checked)} className="size-5 accent-blue" />{onSelect ? <button onClick={onSelect} className={`min-w-0 flex-1 text-left ${completed ? "text-muted line-through" : ""}`}><span className="block truncate">{star.title}</span>{dark && <span className="mt-1 block font-mono text-[10px] uppercase tracking-wider text-paper/50">North Star</span>}</button> : <span className={`min-w-0 flex-1 ${completed ? "text-muted line-through" : ""}`}><span className="block truncate">{star.title}</span></span>}{onNorthStar && <button aria-label={star.northStar ? `Remove ${star.title} as North Star` : `Make ${star.title} a North Star`} onClick={() => onNorthStar(!star.northStar)} className={`text-xl ${star.northStar ? "text-blue" : "text-muted"}`}>★</button>}<button aria-label={`Delete ${star.title}`} title="Delete Star" onClick={onDelete} className="px-1 text-muted hover:text-accent"><TrashIcon /></button></div>;
-}
-
-function RedshiftStarRow({ star, timeZone, onToggle, onDelete }: { star: RedshiftStar; timeZone: string; onToggle: (value: boolean) => void; onDelete: () => void }) {
-  const completed = isTickedToday(star.completedAt, Date.now(), timeZone);
-  return <div className="flex items-center gap-3 rounded-2xl border border-line p-3"><input aria-label={`Complete ${star.title}`} type="checkbox" checked={completed} onChange={(event) => onToggle(event.target.checked)} className="size-5 accent-red" /><span className="min-w-0 flex-1"><span className="block truncate">{star.title}</span></span><button aria-label={`Delete ${star.title}`} title="Delete Star" onClick={onDelete} className="px-1 text-muted hover:text-accent"><TrashIcon /></button></div>;
-}
-
-function ShiftModal({ label, error, onClose, onSubmit }: { label: "Blueshift" | "Redshift"; error?: string; onClose: () => void; onSubmit: (input: { name: string; goal?: string }) => void }) { const [name, setName] = useState(""); const [goal, setGoal] = useState(""); return <Modal title={`New ${label}`} onClose={onClose}><form onSubmit={(event) => { event.preventDefault(); if (name.trim()) onSubmit({ name, goal }); }}>{error && <p role="alert" className="mb-4 rounded-xl bg-accent/10 p-3 text-sm text-accent">Couldn't create the {label}: {error}</p>}<label className="block text-sm font-bold">Name<input autoFocus value={name} onChange={(e) => setName(e.target.value)} className="mt-2 w-full rounded-xl border border-line bg-surface p-3" /></label><label className="mt-4 block text-sm font-bold">{label === "Redshift" ? "Aim" : "Goal"} <span className="font-normal text-muted">(optional)</span><textarea value={goal} onChange={(e) => setGoal(e.target.value)} className="mt-2 w-full rounded-xl border border-line bg-surface p-3" rows={3} /></label><Actions disabled={!name.trim()} onClose={onClose} /></form></Modal>; }
-function StarModal({ label, parent, error, onClose, onSubmit }: { label: "Blueshift" | "Redshift"; parent: string; error?: string; onClose: () => void; onSubmit: (title: string) => void }) { const [title, setTitle] = useState(""); return <Modal title="New Star" onClose={onClose}><form onSubmit={(event) => { event.preventDefault(); if (title.trim()) onSubmit(title); }}>{error && <p role="alert" className="mb-4 rounded-xl bg-accent/10 p-3 text-sm text-accent">Couldn't create the Star: {error}</p>}<p className="mb-4 rounded-xl bg-surface p-3 text-sm">{label}: <strong>{parent}</strong></p><label className="block text-sm font-bold">Title<input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} className="mt-2 w-full rounded-xl border border-line bg-surface p-3" /></label><Actions disabled={!title.trim()} onClose={onClose} /></form></Modal>; }
-function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) { return <Dialog.Root open onOpenChange={(open) => !open && onClose()}><Dialog.Portal><Dialog.Backdrop className="fixed inset-0 z-10 bg-ink/40" /><Dialog.Popup className="fixed left-1/2 top-1/2 z-20 w-[min(90vw,28rem)] -translate-x-1/2 -translate-y-1/2 rounded-3xl bg-paper p-6 shadow-2xl"><div className="mb-5 flex justify-between"><Dialog.Title className="font-display text-2xl font-bold">{title}</Dialog.Title><Dialog.Close aria-label="Close" className="text-2xl text-muted">×</Dialog.Close></div>{children}</Dialog.Popup></Dialog.Portal></Dialog.Root>; }
-function Actions({ disabled, onClose }: { disabled: boolean; onClose: () => void }) { return <div className="mt-6 flex justify-end gap-2"><button type="button" onClick={onClose} className="rounded-xl px-4 py-2 text-sm font-bold text-muted">Cancel</button><button disabled={disabled} className="rounded-xl bg-accent px-4 py-2 text-sm font-bold text-white disabled:opacity-40">Create</button></div>; }
-
-function SettingsModal({ timezone, error, onClose, onSubmit }: { timezone: string | null; error?: string; onClose: () => void; onSubmit: (timezone: string | null) => void }) {
-  const [value, setValue] = useState(timezone ?? "");
-  return <Modal title="Settings" onClose={onClose}><form onSubmit={(event) => { event.preventDefault(); onSubmit(value || null); }}>{error && <p role="alert" className="mb-4 rounded-xl bg-accent/10 p-3 text-sm text-accent">Couldn't save settings: {error}</p>}<label className="block text-sm font-bold">Timezone<select autoFocus value={value} onChange={(event) => setValue(event.target.value)} className="mt-2 w-full rounded-xl border border-line bg-surface p-3"><option value="">Automatic (browser timezone)</option>{Intl.supportedValuesOf("timeZone").map((zone) => <option key={zone} value={zone}>{zone}</option>)}</select></label><div className="mt-6 flex justify-end gap-2"><button type="button" onClick={onClose} className="rounded-xl px-4 py-2 text-sm font-bold text-muted">Cancel</button><button className="rounded-xl bg-accent px-4 py-2 text-sm font-bold text-white">Save</button></div></form></Modal>;
-}
-
-function TrashIcon() { return <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v5M14 11v5" /></svg>; }
-
-function GearIcon() { return <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>; }

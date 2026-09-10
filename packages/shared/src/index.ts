@@ -22,7 +22,9 @@ export const blueshiftStarSchema = z.object({
 });
 
 export const createBlueshiftStarSchema = z.object({ title: z.string().trim().min(1, "Title is required") });
-export const updateBlueshiftStarSchema = z.object({ completed: z.boolean().optional(), northStar: z.boolean().optional() }).refine((value) => value.completed !== undefined || value.northStar !== undefined);
+export const updateBlueshiftStarSchema = z
+  .object({ completed: z.boolean().optional(), northStar: z.boolean().optional() })
+  .refine((value) => "completed" in value || "northStar" in value);
 
 export const redshiftSchema = z.object({
   id: z.string(),
@@ -47,15 +49,15 @@ export const redshiftStarSchema = z.object({
 export const createRedshiftStarSchema = z.object({ title: z.string().trim().min(1, "Title is required") });
 export const updateRedshiftStarSchema = z.object({ completed: z.boolean() });
 
-export type Blueshift = z.infer<typeof blueshiftSchema>;
+export type Blueshift = Readonly<z.infer<typeof blueshiftSchema>>;
 export type CreateBlueshift = z.infer<typeof createBlueshiftSchema>;
-export type BlueshiftStar = z.infer<typeof blueshiftStarSchema>;
+export type BlueshiftStar = Readonly<z.infer<typeof blueshiftStarSchema>>;
 export type CreateBlueshiftStar = z.infer<typeof createBlueshiftStarSchema>;
 export type UpdateBlueshiftStar = z.infer<typeof updateBlueshiftStarSchema>;
 
-export type Redshift = z.infer<typeof redshiftSchema>;
+export type Redshift = Readonly<z.infer<typeof redshiftSchema>>;
 export type CreateRedshift = z.infer<typeof createRedshiftSchema>;
-export type RedshiftStar = z.infer<typeof redshiftStarSchema>;
+export type RedshiftStar = Readonly<z.infer<typeof redshiftStarSchema>>;
 export type CreateRedshiftStar = z.infer<typeof createRedshiftStarSchema>;
 export type UpdateRedshiftStar = z.infer<typeof updateRedshiftStarSchema>;
 
@@ -68,5 +70,5 @@ export const updateSettingsSchema = z.object({
   timezone: z.string().nullable(),
 });
 
-export type Settings = z.infer<typeof settingsSchema>;
+export type Settings = Readonly<z.infer<typeof settingsSchema>>;
 export type UpdateSettings = z.infer<typeof updateSettingsSchema>;

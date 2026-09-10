@@ -10,7 +10,7 @@ function formatDay(timestamp: number, timeZone: string): string {
 }
 
 export function isTickedToday(completedAt: number | null, now: number, timeZone: string): boolean {
-  if (completedAt == null) return false;
+  if (completedAt === null) return false;
   return formatDay(completedAt, timeZone) === formatDay(now, timeZone);
 }
 

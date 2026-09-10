@@ -7,4 +7,4 @@ const outputPath = join(import.meta.dir, "legend.json");
 
 const entries = parseGlossary(readFileSync(glossaryPath, "utf8"));
 writeFileSync(outputPath, `${JSON.stringify(entries, null, 2)}\n`);
-console.log(`Wrote ${entries.length} legend entries to packages/legend/src/legend.json`);
+process.stdout.write(`Wrote ${entries.length} legend entries to packages/legend/src/legend.json\n`);

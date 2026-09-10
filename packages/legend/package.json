@@ -8,6 +8,7 @@
   },
   "scripts": {
     "generate": "bun src/generate.ts",
+    "test": "bun test src",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
