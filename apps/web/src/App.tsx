@@ -4,7 +4,8 @@ import { Header } from "./components/Header";
 import { Legend } from "./components/Legend";
 import { QueryStateBanner } from "./components/QueryStateBanner";
 import { Workspace } from "./components/Workspace";
-import { useShiftMutations, useStarMutations, useWorkspaceQueries } from "#lib/hooks";
+import { useShiftMutations, useWorkspaceQueries } from "#lib/hooks";
+import { useStarMutations } from "#lib/star-hooks";
 import type { ConfirmState, Kind, ModalKind, Selected } from "#lib/kinds";
 
 export function App(): React.JSX.Element {

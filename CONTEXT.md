@@ -12,6 +12,10 @@ _Avoid_: Project, project
 An open-ended body of work that gathers related Stars, practiced indefinitely and never completed. Its Stars' completions reset at the start of each day. The name evokes receding from a star and the resulting redshift in its observed frequencies.
 _Avoid_: Habit, practice, recurring project
 
+**Magnitude**:
+A tier of a Redshift or Blueshift: First, Second, Third, or Fourth Magnitude. First Magnitude is the highest, Fourth the lowest. A Star belongs to the Magnitude of its shift. Within a Magnitude, shifts are roughly equivalent and unordered.
+_Avoid_: Priority, tier, rank
+
 **Star**:
 A single, actionable piece of work belonging to one Blueshift or Redshift.
 _Avoid_: Task, todo, to-do, item

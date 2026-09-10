@@ -8,6 +8,7 @@ export const blueshiftSchema = z.object({
   id: z.string(),
   name: z.string(),
   goal: z.string().nullable(),
+  magnitude: z.number().int().min(1).max(4),
   createdAt: z.number(),
 });
 
@@ -24,6 +25,7 @@ export const redshiftSchema = z.object({
   id: z.string(),
   name: z.string(),
   goal: z.string().nullable(),
+  magnitude: z.number().int().min(1).max(4),
   createdAt: z.number(),
 });
 

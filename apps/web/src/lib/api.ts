@@ -12,7 +12,9 @@ import type {
   Redshift,
   RedshiftStar,
   Settings,
+  UpdateBlueshift,
   UpdateBlueshiftStar,
+  UpdateRedshift,
   UpdateRedshiftStar,
 } from "@proj/shared";
 
@@ -44,6 +46,12 @@ export async function createBlueshift(input: CreateBlueshift): Promise<Blueshift
   const response = await client.api.blueshifts.$post({ json: input });
   const created = await unwrap(response);
   return created;
+}
+
+export async function updateBlueshift(id: string, input: UpdateBlueshift): Promise<Blueshift> {
+  const response = await client.api.blueshifts[":id"].$patch({ param: { id }, json: input });
+  const updated = await unwrap(response);
+  return updated;
 }
 
 export async function deleteBlueshift(id: string): Promise<void> {
@@ -84,6 +92,12 @@ export async function createRedshift(input: CreateRedshift): Promise<Redshift> {
   const response = await client.api.redshifts.$post({ json: input });
   const created = await unwrap(response);
   return created;
+}
+
+export async function updateRedshift(id: string, input: UpdateRedshift): Promise<Redshift> {
+  const response = await client.api.redshifts[":id"].$patch({ param: { id }, json: input });
+  const updated = await unwrap(response);
+  return updated;
 }
 
 export async function deleteRedshift(id: string): Promise<void> {

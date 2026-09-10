@@ -1,21 +1,27 @@
 import type React from "react";
 import { TrashIcon } from "./icons";
+import { magnitudeShortLabel, MAGNITUDE_ORDER } from "#lib/magnitude";
 import type { Kind } from "#lib/kinds";
+import type { Magnitude } from "@proj/shared";
 
 export function ShiftRow({
   kind,
   name,
   goal,
+  magnitude,
   selected,
   onSelect,
   onDelete,
+  onMagnitude,
 }: {
   readonly kind: Kind;
   readonly name: string;
   readonly goal: string | null;
+  readonly magnitude: Magnitude;
   readonly selected: boolean;
   readonly onSelect: () => void;
   readonly onDelete: () => void;
+  readonly onMagnitude: (magnitude: Magnitude) => void;
 }): React.JSX.Element {
   const isRedshift = kind === "redshift";
   const selectedClass = isRedshift ? "bg-red/10 text-red" : "bg-blue/10 text-blue";
@@ -27,6 +33,23 @@ export function ShiftRow({
         <strong className="block truncate">{name}</strong>
         {goal !== null && goal.length > 0 && <span className="mt-1 block truncate text-xs text-muted">{goal}</span>}
       </button>
+      <select
+        aria-label={`Magnitude of ${name}`}
+        title={`Magnitude of ${name}`}
+        value={magnitude}
+        onChange={(event) => {
+          const next = Number(event.target.value);
+          if (!MAGNITUDE_ORDER.includes(next)) throw new Error(`Unknown Magnitude: ${event.target.value}`);
+          onMagnitude(next);
+        }}
+        className="mt-1 shrink-0 rounded-lg border border-line bg-surface px-1 py-0.5 font-mono text-xs"
+      >
+        {MAGNITUDE_ORDER.map((value) => (
+          <option key={value} value={value}>
+            {magnitudeShortLabel(value)}
+          </option>
+        ))}
+      </select>
       <button
         type="button"
         aria-label={`Delete ${name}`}

@@ -1,8 +1,9 @@
 import type React from "react";
 import { NorthStarsSection } from "./NorthStarsSection";
 import { ShiftsArea } from "./ShiftsArea";
-import { latestMutationError } from "#lib/hooks";
-import type { WorkspaceQueries, ShiftMutations, StarMutations } from "#lib/hooks";
+import { latestMutationError } from "#lib/star-hooks";
+import type { WorkspaceQueries, ShiftMutations } from "#lib/hooks";
+import type { StarMutations } from "#lib/star-hooks";
 import type { ConfirmState, ModalKind, Selected } from "#lib/kinds";
 import type { BlueshiftStar } from "@proj/shared";
 

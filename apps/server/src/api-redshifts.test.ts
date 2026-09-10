@@ -71,6 +71,59 @@ describe("redshift API", () => {
   });
 });
 
+describe("redshift magnitude", () => {
+  test("defaults new Redshifts to Fourth Magnitude and updates via PATCH", async () => {
+    const redshift = await createRedshift("Dim start");
+    expect(redshift.magnitude).toBe(4);
+    const promoted = await json(
+      await request(`/api/redshifts/${redshift.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ magnitude: 1 }),
+        headers: jsonHeaders,
+      }),
+      redshiftSchema,
+    );
+    expect(promoted.magnitude).toBe(1);
+  });
+
+  test("updates name, goal, and magnitude in one PATCH", async () => {
+    const redshift = await createRedshift("Rename me", "Old aim");
+    const updated = await json(
+      await request(`/api/redshifts/${redshift.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ name: "Renamed", goal: "New aim", magnitude: 3 }),
+        headers: jsonHeaders,
+      }),
+      redshiftSchema,
+    );
+    expect(updated.name).toBe("Renamed");
+    expect(updated.goal).toBe("New aim");
+    expect(updated.magnitude).toBe(3);
+  });
+
+  test("rejects magnitudes outside 1 to 4", async () => {
+    const redshift = await createRedshift("Bounds");
+    for (const magnitude of [0, 5]) {
+      const response = await request(`/api/redshifts/${redshift.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ magnitude }),
+        headers: jsonHeaders,
+      });
+      expect(response.status).toBe(400);
+    }
+  });
+
+  test("returns not-found for an unknown Redshift", async () => {
+    const response = await request(`/api/redshifts/${crypto.randomUUID()}`, {
+      method: "PATCH",
+      body: JSON.stringify({ magnitude: 1 }),
+      headers: jsonHeaders,
+    });
+    expect(response.status).toBe(404);
+    expect(await json(response, apiErrorSchema)).toEqual({ error: "Redshift not found" });
+  });
+});
+
 describe("redshift stars", () => {
   test("creates Stars without any North Star representation", async () => {
     const redshift = await createRedshift("Jamming");

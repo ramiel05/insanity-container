@@ -1,4 +1,9 @@
-import { createBlueshiftSchema, createBlueshiftStarSchema, updateBlueshiftStarSchema } from "@proj/shared";
+import {
+  createBlueshiftSchema,
+  createBlueshiftStarSchema,
+  updateBlueshiftSchema,
+  updateBlueshiftStarSchema,
+} from "@proj/shared";
 import { zValidator } from "@hono/zod-validator";
 import { and, eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
@@ -17,9 +22,25 @@ export function createBlueshiftRoutes(database = db) {
     )
     .post("/", zValidator("json", createBlueshiftSchema), async (c) => {
       const input = c.req.valid("json");
-      const blueshift = { id: crypto.randomUUID(), name: input.name, goal: input.goal ?? null, createdAt: Date.now() };
-      await database.insert(blueshifts).values(blueshift);
-      return c.json(blueshift, 201);
+      const [created] = await database
+        .insert(blueshifts)
+        .values({ id: crypto.randomUUID(), name: input.name, goal: input.goal ?? null, createdAt: Date.now() })
+        .returning();
+      return c.json(created, 201);
+    })
+    .patch("/:id", zValidator("json", updateBlueshiftSchema), async (c) => {
+      const input = c.req.valid("json");
+      const set: Partial<typeof blueshifts.$inferInsert> = {};
+      if ("name" in input) set.name = input.name;
+      if ("goal" in input) set.goal = input.goal ?? null;
+      if ("magnitude" in input) set.magnitude = input.magnitude;
+      const [updated] = await database
+        .update(blueshifts)
+        .set(set)
+        .where(eq(blueshifts.id, c.req.param("id")))
+        .returning();
+      if (!updated) return c.json({ error: "Blueshift not found" }, 404);
+      return c.json(updated);
     })
     .delete("/:id", async (c) => {
       const [deleted] = await database

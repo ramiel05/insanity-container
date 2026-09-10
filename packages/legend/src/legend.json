@@ -11,6 +11,11 @@
   },
   {
     "section": "Language",
+    "term": "Magnitude",
+    "definition": "A tier of a Redshift or Blueshift: First, Second, Third, or Fourth Magnitude. First Magnitude is the highest, Fourth the lowest. A Star belongs to the Magnitude of its shift. Within a Magnitude, shifts are roughly equivalent and unordered."
+  },
+  {
+    "section": "Language",
     "term": "Star",
     "definition": "A single, actionable piece of work belonging to one Blueshift or Redshift."
   },

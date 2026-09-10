@@ -39,6 +39,7 @@ test("the Legend section includes every concept from the artifact", async ({ pag
 const guideTitles = [
   "Turn goals into Blueshifts",
   "Decompose Blueshifts into Stars",
+  "Rank shifts by Magnitude",
   "Designate North Stars for the day",
   "The end-of-day review",
   "Practice endlessly with Redshifts",

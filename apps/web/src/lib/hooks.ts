@@ -7,7 +7,15 @@ import {
 } from "@tanstack/react-query";
 import * as api from "#lib/api";
 import { effectiveTimeZone } from "#lib/day";
-import type { Blueshift, BlueshiftStar, Redshift, RedshiftStar, Settings } from "@proj/shared";
+import type {
+  Blueshift,
+  BlueshiftStar,
+  Redshift,
+  RedshiftStar,
+  Settings,
+  UpdateBlueshift,
+  UpdateRedshift,
+} from "@proj/shared";
 import type { Kind, Selected } from "#lib/kinds";
 
 export interface MutationDeps {
@@ -20,6 +28,8 @@ export interface MutationDeps {
 export interface ShiftMutations {
   readonly createBlueshift: UseMutationResult<Blueshift, Error, { readonly name: string; readonly goal?: string }>;
   readonly createRedshift: UseMutationResult<Redshift, Error, { readonly name: string; readonly goal?: string }>;
+  readonly updateBlueshift: UseMutationResult<Blueshift, Error, { readonly id: string } & UpdateBlueshift>;
+  readonly updateRedshift: UseMutationResult<Redshift, Error, { readonly id: string } & UpdateRedshift>;
   readonly deleteBlueshift: UseMutationResult<void, Error, string>;
   readonly deleteRedshift: UseMutationResult<void, Error, string>;
   readonly updateSettings: UseMutationResult<Settings, Error, { readonly timezone: string | null }>;
@@ -47,6 +57,24 @@ export function useShiftMutations(deps: MutationDeps): ShiftMutations {
     onSuccess: (item) => {
       onSelected("redshift", item.id);
       onCloseModal();
+      refresh();
+    },
+  });
+  const updateBlueshift = useMutation({
+    mutationFn: async ({ id, ...input }: { readonly id: string } & UpdateBlueshift) => {
+      const updated = await api.updateBlueshift(id, input);
+      return updated;
+    },
+    onSuccess: () => {
+      refresh();
+    },
+  });
+  const updateRedshift = useMutation({
+    mutationFn: async ({ id, ...input }: { readonly id: string } & UpdateRedshift) => {
+      const updated = await api.updateRedshift(id, input);
+      return updated;
+    },
+    onSuccess: () => {
       refresh();
     },
   });
@@ -79,115 +107,14 @@ export function useShiftMutations(deps: MutationDeps): ShiftMutations {
       refresh();
     },
   });
-  return { createBlueshift, createRedshift, deleteBlueshift, deleteRedshift, updateSettings };
-}
-
-export interface StarKindMutations<TStar, TUpdate> {
-  readonly createStar: UseMutationResult<TStar, Error, { readonly id: string; readonly title: string }>;
-  readonly updateStar: UseMutationResult<TStar, Error, TUpdate>;
-  readonly deleteStar: UseMutationResult<void, Error, string>;
-}
-
-export interface StarMutations {
-  readonly blueshift: StarKindMutations<
-    BlueshiftStar,
-    { readonly id: string; readonly completed?: boolean; readonly northStar?: boolean }
-  >;
-  readonly redshift: StarKindMutations<RedshiftStar, { readonly id: string; readonly completed: boolean }>;
-}
-
-interface MutationErrorView {
-  readonly error: { readonly message: string } | null;
-  readonly errorUpdatedAt: number;
-}
-
-export function latestMutationError(mutations: readonly MutationErrorView[]): string | undefined {
-  let latestMessage: string | undefined;
-  let latestAt = 0;
-  for (const mutation of mutations) {
-    if (mutation.error !== null && mutation.errorUpdatedAt > latestAt) {
-      latestAt = mutation.errorUpdatedAt;
-      latestMessage = mutation.error.message;
-    }
-  }
-  return latestMessage;
-}
-
-export interface StarErrors {
-  readonly latest?: string;
-  readonly create?: string;
-}
-
-export function starErrorsFor<TStar, TUpdate>(starMutations: StarKindMutations<TStar, TUpdate>): StarErrors {
   return {
-    latest: latestMutationError(Object.values(starMutations)),
-    create: starMutations.createStar.error?.message,
-  };
-}
-
-export function useStarMutations(refresh: () => void): StarMutations {
-  const createStar = useMutation({
-    mutationFn: async ({ id, title }: { readonly id: string; readonly title: string }) => {
-      const created = await api.createBlueshiftStar(id, { title });
-      return created;
-    },
-    onSuccess: () => {
-      refresh();
-    },
-  });
-  const createRedshiftStar = useMutation({
-    mutationFn: async ({ id, title }: { readonly id: string; readonly title: string }) => {
-      const created = await api.createRedshiftStar(id, { title });
-      return created;
-    },
-    onSuccess: () => {
-      refresh();
-    },
-  });
-  const updateStar = useMutation({
-    mutationFn: async ({
-      id,
-      ...input
-    }: {
-      readonly id: string;
-      readonly completed?: boolean;
-      readonly northStar?: boolean;
-    }) => {
-      const updated = await api.updateBlueshiftStar(id, input);
-      return updated;
-    },
-    onSuccess: () => {
-      refresh();
-    },
-  });
-  const updateRedshiftStar = useMutation({
-    mutationFn: async ({ id, completed }: { readonly id: string; readonly completed: boolean }) => {
-      const updated = await api.updateRedshiftStar(id, { completed });
-      return updated;
-    },
-    onSuccess: () => {
-      refresh();
-    },
-  });
-  const deleteStar = useMutation({
-    mutationFn: async (id: string) => {
-      await api.deleteBlueshiftStar(id);
-    },
-    onSuccess: () => {
-      refresh();
-    },
-  });
-  const deleteRedshiftStar = useMutation({
-    mutationFn: async (id: string) => {
-      await api.deleteRedshiftStar(id);
-    },
-    onSuccess: () => {
-      refresh();
-    },
-  });
-  return {
-    blueshift: { createStar, updateStar, deleteStar },
-    redshift: { createStar: createRedshiftStar, updateStar: updateRedshiftStar, deleteStar: deleteRedshiftStar },
+    createBlueshift,
+    createRedshift,
+    updateBlueshift,
+    updateRedshift,
+    deleteBlueshift,
+    deleteRedshift,
+    updateSettings,
   };
 }
 

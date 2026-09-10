@@ -62,6 +62,59 @@ describe("blueshift API", () => {
   });
 });
 
+describe("blueshift magnitude", () => {
+  test("defaults new Blueshifts to Fourth Magnitude and updates via PATCH", async () => {
+    const blueshift = await createBlueshift("Dim start");
+    expect(blueshift.magnitude).toBe(4);
+    const promoted = await json(
+      await request(`/api/blueshifts/${blueshift.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ magnitude: 1 }),
+        headers: jsonHeaders,
+      }),
+      blueshiftSchema,
+    );
+    expect(promoted.magnitude).toBe(1);
+  });
+
+  test("updates name, goal, and magnitude in one PATCH", async () => {
+    const blueshift = await createBlueshift("Rename me", "Old goal");
+    const updated = await json(
+      await request(`/api/blueshifts/${blueshift.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ name: "Renamed", goal: "New goal", magnitude: 2 }),
+        headers: jsonHeaders,
+      }),
+      blueshiftSchema,
+    );
+    expect(updated.name).toBe("Renamed");
+    expect(updated.goal).toBe("New goal");
+    expect(updated.magnitude).toBe(2);
+  });
+
+  test("rejects magnitudes outside 1 to 4", async () => {
+    const blueshift = await createBlueshift("Bounds");
+    for (const magnitude of [0, 5]) {
+      const response = await request(`/api/blueshifts/${blueshift.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ magnitude }),
+        headers: jsonHeaders,
+      });
+      expect(response.status).toBe(400);
+    }
+  });
+
+  test("returns not-found for an unknown Blueshift", async () => {
+    const response = await request(`/api/blueshifts/${crypto.randomUUID()}`, {
+      method: "PATCH",
+      body: JSON.stringify({ magnitude: 1 }),
+      headers: jsonHeaders,
+    });
+    expect(response.status).toBe(404);
+    expect(await json(response, apiErrorSchema)).toEqual({ error: "Blueshift not found" });
+  });
+});
+
 describe("blueshift stars", () => {
   test("lists Stars for a Blueshift in creation order", async () => {
     const blueshift = await createBlueshift("Ordered");

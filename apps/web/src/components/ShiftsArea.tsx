@@ -1,9 +1,10 @@
 import type React from "react";
 import { AppModals } from "./AppModals";
 import { MainGrid } from "./MainGrid";
-import type { WorkspaceQueries, ShiftMutations, StarMutations } from "#lib/hooks";
+import type { WorkspaceQueries, ShiftMutations } from "#lib/hooks";
+import type { StarMutations } from "#lib/star-hooks";
 import type { ConfirmState, Kind, ModalKind, Selected } from "#lib/kinds";
-import type { BlueshiftStar, RedshiftStar } from "@proj/shared";
+import type { BlueshiftStar, Magnitude, RedshiftStar } from "@proj/shared";
 
 export function ShiftsArea({
   workspace,
@@ -41,6 +42,10 @@ export function ShiftsArea({
           confirmDelete(`Delete the ${kind === "blueshift" ? "Blueshift" : "Redshift"} "${name}"?`, () => {
             mutation.mutate(id);
           });
+        }}
+        onSetMagnitude={(kind: Kind, id: string, magnitude: Magnitude) => {
+          if (kind === "blueshift") shiftMutations.updateBlueshift.mutate({ id, magnitude });
+          else shiftMutations.updateRedshift.mutate({ id, magnitude });
         }}
         onCreateStar={(title: string) => {
           const blueshift = workspace.selectedBlueshift;

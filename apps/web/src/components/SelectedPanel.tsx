@@ -1,7 +1,7 @@
 import type React from "react";
 import { BlueshiftPanel } from "./BlueshiftPanel";
 import { RedshiftPanel } from "./RedshiftPanel";
-import type { StarErrors } from "#lib/hooks";
+import type { StarErrors } from "#lib/star-hooks";
 import type { Blueshift, BlueshiftStar, Redshift, RedshiftStar } from "@proj/shared";
 
 export function SelectedPanel({
@@ -63,7 +63,7 @@ export function SelectedPanel({
   }
   return (
     <div className="flex min-h-64 items-center justify-center" aria-label="No Blueshift or Redshift selected">
-      <p className="text-muted">{"Select a Blueshift or Redshift from the sidebar."}</p>
+      <p className="text-muted">{"Select a Redshift or Blueshift to see its Stars."}</p>
     </div>
   );
 }

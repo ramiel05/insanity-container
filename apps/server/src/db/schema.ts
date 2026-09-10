@@ -4,6 +4,7 @@ export const blueshifts = sqliteTable("blueshifts", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   goal: text("goal"),
+  magnitude: integer("magnitude").notNull().default(4),
   createdAt: integer("created_at", { mode: "number" }).notNull(),
 });
 
@@ -22,6 +23,7 @@ export const redshifts = sqliteTable("redshifts", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   goal: text("goal"),
+  magnitude: integer("magnitude").notNull().default(4),
   createdAt: integer("created_at", { mode: "number" }).notNull(),
 });
 
