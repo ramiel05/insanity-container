@@ -11,6 +11,8 @@ There are exactly three story types and no staging environment: local dev runs a
 
 **Naming caution:** Until the owner purchases a domain, production runs a Clerk *development instance* — a Clerk product tier for unverified domains, which works on any URL. "Development" there is Clerk's tier label, not one of the app's environments. The Fly deployment is production in every operational sense: real migrations, kept data, enforced auth. Future agents must not infer a staging environment from Clerk dashboard wording, nor treat the deployment database as disposable. The custom domain is a stated prerequisite for the multi-user phase, where it unlocks the production Clerk instance (separate key store, one re-login).
 
+**Data-path tradeoffs:** The replica guarantees read-your-writes without an explicit sync: once a write resolves at the primary, the local replica is updated automatically and the next local read sees the new data — no stale reads and no extra round trip in the request path. Writes themselves still pay the Mumbai round trip (~100ms), as they are not written locally first. Two deliberate positions on that cost: `offline: true` (local-first writes) is rejected — it downgrades "Turso has it" to "my disk has it, Turso will get it", undermining the durability this move chose Turso for — and client-side write latency is masked by TanStack Query optimistic updates, a UI-layer concern independent of the replica. Handlers keep sibling statements in a single `client.batch()` call so a logical action pays the write round trip once.
+
 **Considered options**
 
 - Vercel for web + API with a `@hono/node-server/vercel` shim: rejected — would force dropping the Bun runtime for a Node adapter and split the deployment across platforms.
@@ -26,4 +28,4 @@ There are exactly three story types and no staging environment: local dev runs a
 - Clerk's development instance covers the personal phase on its free tier; upgrading to a production instance is dashboard config plus env swap, never code.
 - Scaling the API independently of static assets requires exercising the `createApp()` seam first — by design.
 
-**Amended** (2026-09-12): corrected the Turso location from `syd` — a factual error, as Turso's available regions include no Sydney — to Mumbai (`aws-ap-south-1`), the nearest available region, with an embedded replica absorbing read latency.
+**Amended** (2026-09-12): corrected the Turso location from `syd` — a factual error, as Turso's available regions include no Sydney — to Mumbai (`aws-ap-south-1`), the nearest available region, with an embedded replica absorbing read latency; also recorded the data-path tradeoffs (read-your-writes, write round-trip cost, rejection of local-first writes, optimistic-update masking).
