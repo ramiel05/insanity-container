@@ -3,7 +3,7 @@
 **Status:** accepted
 **Date:** 2026-09-12
 
-Polaris graduates from a local-only app to a personally-operated cloud deployment, now that entered data is worth keeping. One Bun application deploys to Fly.io in region `syd`: a single machine serves the Hono API, the built web SPA, and the Atlas site from one origin, backed by a Turso (libSQL) database also located in `syd`. Clerk provides auth via GitHub and Google social sign-in, with public sign-ups disabled — only the owner can hold an account. The deployment starts with a fresh Turso database; the local database holds no data worth importing.
+Polaris graduates from a local-only app to a personally-operated cloud deployment, now that entered data is worth keeping. One Bun application deploys to Fly.io in region `syd`: a single machine serves the Hono API, the built web SPA, and the Atlas site from one origin, backed by a Turso (libSQL) database in Mumbai (`aws-ap-south-1`) — the nearest Turso location to Australia, as Turso offers no Sydney region. An embedded replica keeps a synced SQLite file on the Fly machine, so reads are local and only writes cross the Indian Ocean. Clerk provides auth via GitHub and Google social sign-in, with public sign-ups disabled — only the owner can hold an account. The deployment starts with a fresh Turso database; the local database holds no data worth importing.
 
 `createApp()` remains a pure API Hono app; static file serving is a separate mount layer around it, never entangled with route logic. This is the seam for the eventual multi-user phase (ADR 0001's database-per-user direction): splitting later means pointing a second deploy target at the same pure API app — a config change, not a re-architecture. Same-origin serving keeps CORS out of production entirely; the web client calls `/api` relatively and contains no hardcoded host. All keys and URLs are environment-driven from day one, so the future domain switch is config-only.
 
@@ -20,8 +20,10 @@ There are exactly three story types and no staging environment: local dev runs a
 
 **Consequences**
 
-- `bun:sqlite` is replaced by `@libsql/client` for all database access: production connects via `libsql://` URL and auth token; local dev and tests via `file:` URLs — one driver everywhere.
+- `bun:sqlite` is replaced by `@libsql/client` for all database access: production runs an embedded replica — a local file synced from the Turso Mumbai primary, so reads are local and writes pay the remote round trip; local dev and tests use plain `file:` URLs — one driver everywhere.
 - CORS middleware remains a dev-only concern (cross-origin `localhost:5173` → `:3000`); production is same-origin.
 - Deploys are manual `fly deploy` from the owner's machine; CI auto-deploy waits until a review loop exists to honor.
 - Clerk's development instance covers the personal phase on its free tier; upgrading to a production instance is dashboard config plus env swap, never code.
 - Scaling the API independently of static assets requires exercising the `createApp()` seam first — by design.
+
+**Amended** (2026-09-12): corrected the Turso location from `syd` — a factual error, as Turso's available regions include no Sydney — to Mumbai (`aws-ap-south-1`), the nearest available region, with an embedded replica absorbing read latency.
