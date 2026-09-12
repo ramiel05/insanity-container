@@ -65,14 +65,14 @@ export function createHarness(): {
 } {
   const path = `/tmp/polaris-test-${crypto.randomUUID()}.sqlite`;
   const serverRoot = join(import.meta.dir, "..");
-  const pushed = Bun.spawnSync(["bun", "run", "db:push"], {
+  const migrated = Bun.spawnSync(["bun", "run", "db:migrate"], {
     cwd: serverRoot,
     env: { ...process.env, DATABASE_URL: path },
     stdout: "pipe",
     stderr: "pipe",
   });
-  if (pushed.exitCode !== 0) {
-    throw new Error(`db:push failed:\n${new TextDecoder().decode(pushed.stderr)}`);
+  if (migrated.exitCode !== 0) {
+    throw new Error(`db:migrate failed:\n${new TextDecoder().decode(migrated.stderr)}`);
   }
   const storage = createDb(path);
   const app = createApp(storage.db);
