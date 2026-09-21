@@ -11,7 +11,7 @@ import {
   type RedshiftStar,
 } from "./test-harness";
 
-const { request, storage, close } = createHarness();
+const { request, storage, close } = await createHarness();
 
 afterAll(() => {
   close();

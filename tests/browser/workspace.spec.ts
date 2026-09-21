@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./auth";
 
 test("creates a Blueshift and its first Star", async ({ page }) => {
   await page.goto("/");

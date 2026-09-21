@@ -1,0 +1,14 @@
+node_modules
+dist
+.astro
+sqlite.db
+*.db
+*.db-shm
+*.db-wal
+replica.db*
+.env
+.env.*
+.git
+test-results
+playwright-report
+docs

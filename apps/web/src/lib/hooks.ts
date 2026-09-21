@@ -65,7 +65,19 @@ export function useShiftMutations(deps: MutationDeps): ShiftMutations {
       const updated = await api.updateBlueshift(id, input);
       return updated;
     },
-    onSuccess: () => {
+    onMutate: async ({ id, ...input }) => {
+      await client.cancelQueries({ queryKey: ["blueshifts"] });
+      const previous = client.getQueryData<Blueshift[]>(["blueshifts"]);
+      client.setQueryData<Blueshift[]>(["blueshifts"], (current) => {
+        if (current === undefined) return current;
+        return current.map((item) => (item.id === id ? { ...item, ...input } : item));
+      });
+      return { previous };
+    },
+    onError: (_error, _vars, context) => {
+      if (context?.previous !== undefined) client.setQueryData(["blueshifts"], context.previous);
+    },
+    onSettled: () => {
       refresh();
     },
   });
@@ -74,7 +86,19 @@ export function useShiftMutations(deps: MutationDeps): ShiftMutations {
       const updated = await api.updateRedshift(id, input);
       return updated;
     },
-    onSuccess: () => {
+    onMutate: async ({ id, ...input }) => {
+      await client.cancelQueries({ queryKey: ["redshifts"] });
+      const previous = client.getQueryData<Redshift[]>(["redshifts"]);
+      client.setQueryData<Redshift[]>(["redshifts"], (current) => {
+        if (current === undefined) return current;
+        return current.map((item) => (item.id === id ? { ...item, ...input } : item));
+      });
+      return { previous };
+    },
+    onError: (_error, _vars, context) => {
+      if (context?.previous !== undefined) client.setQueryData(["redshifts"], context.previous);
+    },
+    onSettled: () => {
       refresh();
     },
   });

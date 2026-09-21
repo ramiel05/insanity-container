@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, test } from "bun:test";
 import { createHarness, jsonHeaders, parseJson as json, settingsSchema } from "./test-harness";
 
-const { request, close } = createHarness();
+const { request, close } = await createHarness();
 
 afterAll(() => {
   close();

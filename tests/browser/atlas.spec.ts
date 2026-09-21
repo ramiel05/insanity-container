@@ -5,7 +5,7 @@ import { z } from "zod";
 const legendEntrySchema = z.object({ section: z.string(), term: z.string(), definition: z.string() });
 const legend = z.array(legendEntrySchema).parse(JSON.parse(readFileSync("packages/legend/src/legend.json", "utf8")));
 
-const atlasURL = "http://localhost:4173";
+const atlasURL = "http://localhost:4173/atlas/";
 
 function slug(value: string): string {
   return value

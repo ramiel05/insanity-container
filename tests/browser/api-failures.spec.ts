@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./auth";
 
 test("shows a visible error with a local fix hint when the API is unreachable", async ({ page }) => {
   test.setTimeout(30_000);

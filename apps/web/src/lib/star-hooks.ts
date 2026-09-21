@@ -1,4 +1,4 @@
-import { useMutation, type UseMutationResult } from "@tanstack/react-query";
+import { useMutation, useQueryClient, type UseMutationResult } from "@tanstack/react-query";
 import * as api from "#lib/api";
 import type { BlueshiftStar, RedshiftStar } from "@proj/shared";
 
@@ -46,6 +46,7 @@ export function starErrorsFor<TStar, TUpdate>(starMutations: StarKindMutations<T
 }
 
 export function useStarMutations(refresh: () => void): StarMutations {
+  const client = useQueryClient();
   const createStar = useMutation({
     mutationFn: async ({ id, title }: { readonly id: string; readonly title: string }) => {
       const created = await api.createBlueshiftStar(id, { title });
@@ -76,7 +77,33 @@ export function useStarMutations(refresh: () => void): StarMutations {
       const updated = await api.updateBlueshiftStar(id, input);
       return updated;
     },
-    onSuccess: () => {
+    onMutate: async ({ id, ...input }) => {
+      await client.cancelQueries({ queryKey: ["stars"] });
+      await client.cancelQueries({ queryKey: ["north-stars"] });
+      const previousStars = client.getQueriesData<BlueshiftStar[]>({ queryKey: ["stars"] });
+      const previousNorthStars = client.getQueryData<BlueshiftStar[]>(["north-stars"]);
+      client.setQueriesData<BlueshiftStar[]>({ queryKey: ["stars"] }, (current) =>
+        current === undefined ? current : current.map((star) => (star.id === id ? { ...star, ...input } : star)),
+      );
+      client.setQueryData<BlueshiftStar[]>(["north-stars"], (current) => {
+        if (current === undefined) return current;
+        if (input.northStar === false) return current.filter((star) => star.id !== id);
+        if (input.northStar !== true) return current;
+        const star = previousStars
+          .map(([, data]) => data ?? [])
+          .flat()
+          .find((item) => item.id === id);
+        if (star === undefined) return current;
+        return [...current.filter((item) => item.id !== id), { ...star, ...input }];
+      });
+      return { previousStars, previousNorthStars };
+    },
+    onError: (_error, _vars, context) => {
+      if (context === undefined) return;
+      for (const [key, data] of context.previousStars) client.setQueryData(key, data);
+      if (context.previousNorthStars !== undefined) client.setQueryData(["north-stars"], context.previousNorthStars);
+    },
+    onSettled: () => {
       refresh();
     },
   });
@@ -85,7 +112,21 @@ export function useStarMutations(refresh: () => void): StarMutations {
       const updated = await api.updateRedshiftStar(id, { completed });
       return updated;
     },
-    onSuccess: () => {
+    onMutate: async ({ id, completed }) => {
+      await client.cancelQueries({ queryKey: ["redshift-stars"] });
+      const previousStars = client.getQueriesData<RedshiftStar[]>({ queryKey: ["redshift-stars"] });
+      client.setQueriesData<RedshiftStar[]>({ queryKey: ["redshift-stars"] }, (current) =>
+        current === undefined
+          ? current
+          : current.map((star) => (star.id === id ? { ...star, completedAt: completed ? Date.now() : null } : star)),
+      );
+      return { previousStars };
+    },
+    onError: (_error, _vars, context) => {
+      if (context === undefined) return;
+      for (const [key, data] of context.previousStars) client.setQueryData(key, data);
+    },
+    onSettled: () => {
       refresh();
     },
   });

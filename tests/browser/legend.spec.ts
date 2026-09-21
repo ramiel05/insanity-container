@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./auth";
 
 test("renders the Legend above the North Stars section", async ({ page }) => {
   await page.goto("/");

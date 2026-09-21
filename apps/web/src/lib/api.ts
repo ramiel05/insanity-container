@@ -18,7 +18,25 @@ import type {
   UpdateRedshiftStar,
 } from "@proj/shared";
 
-const client = hc<AppType>("http://localhost:3000");
+interface ClerkSession {
+  getToken: () => Promise<string | null>;
+}
+
+async function sessionToken(): Promise<string | null> {
+  const clerk = (globalThis as { Clerk?: { session?: ClerkSession | null } }).Clerk;
+  if (clerk?.session === null || clerk?.session === undefined) return null;
+  const token = await clerk.session.getToken();
+  return token;
+}
+
+const client = hc<AppType>("/", {
+  fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
+    const headers = new Headers(init?.headers);
+    const token = await sessionToken();
+    if (token !== null) headers.set("Authorization", `Bearer ${token}`);
+    return fetch(input, { ...init, headers });
+  },
+});
 
 type SuccessResponseOf<R> =
   R extends ClientResponse<infer T, infer S, infer F>

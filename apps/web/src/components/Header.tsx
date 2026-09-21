@@ -1,4 +1,5 @@
 import type React from "react";
+import { UserButton } from "@clerk/clerk-react";
 import { GearIcon } from "./GearIcon";
 
 export function Header({
@@ -42,6 +43,7 @@ export function Header({
         >
           <GearIcon />
         </button>
+        <UserButton />
       </div>
     </header>
   );

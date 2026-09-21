@@ -10,7 +10,7 @@ const singletonId = 1;
 export function createSettingsRoutes(database = db) {
   return new Hono()
     .get("/", async (c) => {
-      const existing = database.select().from(settings).where(eq(settings.id, singletonId)).get();
+      const [existing] = await database.select().from(settings).where(eq(settings.id, singletonId));
       if (existing) return c.json(existing);
       const row = { id: singletonId, timezone: null };
       await database.insert(settings).values(row);
@@ -18,7 +18,7 @@ export function createSettingsRoutes(database = db) {
     })
     .patch("/", zValidator("json", updateSettingsSchema), async (c) => {
       const input = c.req.valid("json");
-      const existing = database.select().from(settings).where(eq(settings.id, singletonId)).get();
+      const [existing] = await database.select().from(settings).where(eq(settings.id, singletonId));
       if (!existing) {
         const row = { id: singletonId, timezone: input.timezone };
         await database.insert(settings).values(row);

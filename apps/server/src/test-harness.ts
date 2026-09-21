@@ -1,6 +1,7 @@
 import { unlinkSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
+import { allowAll, type Authenticator } from "./auth";
 import { createDb } from "./db";
 import { createApp } from "./index";
 
@@ -58,11 +59,11 @@ export async function parseJson<T>(response: Response, schema: z.ZodType<T>): Pr
   return result.data;
 }
 
-export function createHarness(): {
-  storage: ReturnType<typeof createDb>;
+export async function createHarness(authenticator: Authenticator = allowAll): Promise<{
+  storage: Awaited<ReturnType<typeof createDb>>;
   request: (url: string, init?: RequestInit) => Promise<Response>;
   close: () => void;
-} {
+}> {
   const path = `/tmp/polaris-test-${crypto.randomUUID()}.sqlite`;
   const serverRoot = join(import.meta.dir, "..");
   const migrated = Bun.spawnSync(["bun", "run", "db:migrate"], {
@@ -74,8 +75,8 @@ export function createHarness(): {
   if (migrated.exitCode !== 0) {
     throw new Error(`db:migrate failed:\n${new TextDecoder().decode(migrated.stderr)}`);
   }
-  const storage = createDb(path);
-  const app = createApp(storage.db);
+  const storage = await createDb(path);
+  const app = createApp(storage.db, authenticator);
 
   async function request(url: string, init?: RequestInit): Promise<Response> {
     const response = await app.fetch(new Request(`http://test${url}`, init));
@@ -83,7 +84,7 @@ export function createHarness(): {
   }
 
   function close(): void {
-    storage.sqlite.close();
+    storage.client.close();
     unlinkSync(path);
   }
 

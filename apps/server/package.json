@@ -16,11 +16,13 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "test": "bun test src",
-    "start": "bun src/index.ts",
+    "start": "bun src/main.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@clerk/backend": "^3.17.2",
     "@hono/zod-validator": "^0.7.2",
+    "@libsql/client": "^0.18.0",
     "@proj/shared": "workspace:*",
     "drizzle-orm": "^0.44.5",
     "hono": "^4.9.7",

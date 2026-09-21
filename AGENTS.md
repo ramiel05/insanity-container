@@ -19,19 +19,28 @@ bun --cwd apps/atlas dev
 
 ### Database
 
-`apps/server/src/db/schema.ts` is the single source of truth for the SQLite schema, and `drizzle-kit push` is the only thing that shapes a database file. Create the schema on a fresh clone (or after deleting the file):
+`apps/server/src/db/schema.ts` is the single source of truth for the SQLite schema, and generated migration files are the only thing that shapes a durable database (see `docs/adr/0009-migration-files-supersede-push-only-shaping.md`). The workflow after editing `schema.ts`:
 
 ```bash
-bun --cwd apps/server db:push
+bun --cwd apps/server db:generate
 ```
 
-After editing `schema.ts`, run the same command: push reconciles the file in place, auto-accepting data loss. On a breaking model change, delete the file instead of reconciling:
+Commit the generated file under `apps/server/drizzle/`. Apply migrations to the local dev database (or any database, given `DATABASE_URL`/`DATABASE_AUTH_TOKEN`):
 
 ```bash
-rm apps/server/sqlite.db && bun --cwd apps/server db:push
+bun --cwd apps/server db:migrate
 ```
 
-Tests push the schema into a temp file automatically; no other setup is needed. See `docs/adr/0003-schema-ownership-and-database-lifecycle.md`.
+A fresh clone bootstraps by running all migrations against an empty database — the same command. `drizzle-kit push` is retired and blocked against remote (`libsql://`) databases. Tests migrate temp `file:` databases automatically; no other setup is needed. A drift-guard test fails if the migration files fall behind `schema.ts`.
+
+### Clerk (local dev)
+
+The API rejects unauthenticated requests, and the web app requires a Clerk publishable key at boot, so local development needs the Clerk development-instance keys recorded locally (uncommitted, gitignored):
+
+- `apps/server/.env` → `CLERK_SECRET_KEY`
+- `apps/web/.env` → `VITE_CLERK_PUBLISHABLE_KEY`
+
+No Turso connection is needed for local development: with no `DATABASE_URL` set, the server uses a local SQLite file through the same libSQL driver.
 
 ### Lint and format
 
