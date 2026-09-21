@@ -42,6 +42,8 @@ The API rejects unauthenticated requests, and the web app requires a Clerk publi
 
 No Turso connection is needed for local development: with no `DATABASE_URL` set, the server uses a local SQLite file through the same libSQL driver.
 
+**Auth is the only cross-environment service.** Local dev, browser tests, and the Fly deployment all talk to the same Clerk development instance (same account, same users — signing in on localhost with your GitHub account is the same Clerk user as in production). Data never crosses environments: local dev writes only to a local SQLite file, Turso is production-only. The corollary: Clerk needs network access even for local dev and tests, because token verification fetches JWKS from Clerk's API — a fully offline dev session 401s everything. "Hermetic" local development was never about the identity provider.
+
 Browser tests (`bun run test:browser`) additionally need the owner's Clerk user email in `E2E_CLERK_USER_EMAIL` (both `.env` files are loaded into the Playwright process automatically); the signed-in specs use it with `@clerk/testing` to sign in as that user.
 
 ### Lint and format

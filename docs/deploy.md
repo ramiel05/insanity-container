@@ -45,5 +45,6 @@ Later deploys are a single `fly deploy` from the laptop — no CI pipeline.
 - Browser tests: `E2E_CLERK_USER_EMAIL` (owner's Clerk user) alongside the local dev keys — see `AGENTS.md`.
 - Local dev: no cloud accounts or Turso access — a local SQLite file through the same libSQL driver, with only the two Clerk development keys recorded in the gitignored `.env` files (see `AGENTS.md`).
 - Tests never touch the production database: they migrate temporary `file:` databases and inject fake authenticators.
+- **Auth is the only cross-environment service.** Every environment (local dev, browser tests, production) shares one Clerk development instance and one account — data stays environment-local (local `file:` databases vs Turso). Clerk therefore requires network access in every environment, including local dev; token verification fetches JWKS from Clerk's API.
 
 Handler posture for future work: server handlers keep sibling statements in a single `client.batch()` call so a logical action pays the write round trip once (ADR 0008); no current handler issues two writes in one action.
