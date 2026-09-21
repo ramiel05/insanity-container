@@ -28,4 +28,6 @@ There are exactly three story types and no staging environment: local dev runs a
 - Clerk's development instance covers the personal phase on its free tier; upgrading to a production instance is dashboard config plus env swap, never code.
 - Scaling the API independently of static assets requires exercising the `createApp()` seam first — by design.
 
+**Amended** (2026-09-21): the deployment runs two Fly machines in `syd` — the original one-machine topology plus the standby Fly's launch heuristic provisions for zero-downtime deploys. The single-machine shape was chosen before zero-downtime deployment was considered; with a single machine, every deploy replaces the only machine and briefly takes the app down. Both machines run the same embedded-replica configuration against the Turso primary, which they handle correctly, and the standby's cost is negligible. Everything else about the topology (one app, one origin, one region, manual `fly deploy`) is unchanged.
+
 **Amended** (2026-09-12): corrected the Turso location from `syd` — a factual error, as Turso's available regions include no Sydney — to Mumbai (`aws-ap-south-1`), the nearest available region, with an embedded replica absorbing read latency; also recorded the data-path tradeoffs (read-your-writes, write round-trip cost, rejection of local-first writes, optimistic-update masking).

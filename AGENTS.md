@@ -104,6 +104,6 @@ Use the canonical labels `needs-triage`, `needs-info`, `ready-for-agent`, `ready
 
 This is a single-context repo using root `CONTEXT.md` and `docs/adr/`. See `docs/agents/domain.md`.
 
-### ADR immutability
+### ADRs
 
-Accepted ADRs in `docs/adr/` are immutable: never amend, edit, or update an accepted ADR. A decision change warrants a new ADR that supersedes the old one.
+Accepted ADRs in `docs/adr/` stay immutable *for a decision's lifetime*: never rewrite or silently drop a rationale that was already acted on. When implementation reveals a better or necessary alternative, amend the ADR in place — append an **Amended** section stating what changed, why practice demanded it, and the date — rather than minting a superseding ADR for a decision that was just built. Reserve the supersede flow (new ADR replacing the old wholesale) for direction changes: the original decision was genuinely wrong, or later work contradicts it structurally. ADRs document decisions, not infallibility; deviation discovered in practice is part of the record, not an error to bury.
