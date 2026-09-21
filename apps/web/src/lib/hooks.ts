@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-query";
 import * as api from "#lib/api";
 import { effectiveTimeZone } from "#lib/day";
+import { patchListItems, restoreLists, snapshotLists } from "#lib/optimistic";
 import type {
   Blueshift,
   BlueshiftStar,
@@ -67,15 +68,12 @@ export function useShiftMutations(deps: MutationDeps): ShiftMutations {
     },
     onMutate: async ({ id, ...input }) => {
       await client.cancelQueries({ queryKey: ["blueshifts"] });
-      const previous = client.getQueryData<Blueshift[]>(["blueshifts"]);
-      client.setQueryData<Blueshift[]>(["blueshifts"], (current) => {
-        if (current === undefined) return current;
-        return current.map((item) => (item.id === id ? { ...item, ...input } : item));
-      });
-      return { previous };
+      const snapshot = snapshotLists<Blueshift>(client, ["blueshifts"]);
+      patchListItems<Blueshift>(client, ["blueshifts"], id, input);
+      return { snapshot };
     },
     onError: (_error, _vars, context) => {
-      if (context?.previous !== undefined) client.setQueryData(["blueshifts"], context.previous);
+      if (context !== undefined) restoreLists(client, context.snapshot);
     },
     onSettled: () => {
       refresh();
@@ -88,15 +86,12 @@ export function useShiftMutations(deps: MutationDeps): ShiftMutations {
     },
     onMutate: async ({ id, ...input }) => {
       await client.cancelQueries({ queryKey: ["redshifts"] });
-      const previous = client.getQueryData<Redshift[]>(["redshifts"]);
-      client.setQueryData<Redshift[]>(["redshifts"], (current) => {
-        if (current === undefined) return current;
-        return current.map((item) => (item.id === id ? { ...item, ...input } : item));
-      });
-      return { previous };
+      const snapshot = snapshotLists<Redshift>(client, ["redshifts"]);
+      patchListItems<Redshift>(client, ["redshifts"], id, input);
+      return { snapshot };
     },
     onError: (_error, _vars, context) => {
-      if (context?.previous !== undefined) client.setQueryData(["redshifts"], context.previous);
+      if (context !== undefined) restoreLists(client, context.snapshot);
     },
     onSettled: () => {
       refresh();

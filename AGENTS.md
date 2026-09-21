@@ -42,6 +42,8 @@ The API rejects unauthenticated requests, and the web app requires a Clerk publi
 
 No Turso connection is needed for local development: with no `DATABASE_URL` set, the server uses a local SQLite file through the same libSQL driver.
 
+Browser tests (`bun run test:browser`) additionally need the owner's Clerk user email in `E2E_CLERK_USER_EMAIL` (both `.env` files are loaded into the Playwright process automatically); the signed-in specs use it with `@clerk/testing` to sign in as that user.
+
 ### Lint and format
 
 Linting and formatting are oxc-based and configured at the repo root: `.oxlintrc.json` (aggressive categories + type-aware linting via `oxlint-tsgolint`) and `.oxfmtrc.json` (line width 120, semicolons). Run validation from the repository root:

@@ -53,6 +53,16 @@
           },
           {
             "from": "package",
+            "name": "QueryClient",
+            "package": "@tanstack/react-query"
+          },
+          {
+            "from": "package",
+            "name": "QueryClient",
+            "package": "@tanstack/query-core"
+          },
+          {
+            "from": "package",
             "name": "ReactNode",
             "package": "react"
           }

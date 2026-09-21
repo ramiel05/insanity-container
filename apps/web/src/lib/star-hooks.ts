@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient, type UseMutationResult } from "@tanstack/react-query";
 import * as api from "#lib/api";
+import { patchListItems, restoreLists, snapshotLists } from "#lib/optimistic";
 import type { BlueshiftStar, RedshiftStar } from "@proj/shared";
 
 export interface StarKindMutations<TStar, TUpdate> {
@@ -80,27 +81,25 @@ export function useStarMutations(refresh: () => void): StarMutations {
     onMutate: async ({ id, ...input }) => {
       await client.cancelQueries({ queryKey: ["stars"] });
       await client.cancelQueries({ queryKey: ["north-stars"] });
-      const previousStars = client.getQueriesData<BlueshiftStar[]>({ queryKey: ["stars"] });
+      const snapshot = snapshotLists<BlueshiftStar>(client, ["stars"]);
       const previousNorthStars = client.getQueryData<BlueshiftStar[]>(["north-stars"]);
-      client.setQueriesData<BlueshiftStar[]>({ queryKey: ["stars"] }, (current) =>
-        current === undefined ? current : current.map((star) => (star.id === id ? { ...star, ...input } : star)),
-      );
+      patchListItems<BlueshiftStar>(client, ["stars"], id, input);
       client.setQueryData<BlueshiftStar[]>(["north-stars"], (current) => {
         if (current === undefined) return current;
         if (input.northStar === false) return current.filter((star) => star.id !== id);
         if (input.northStar !== true) return current;
-        const star = previousStars
+        const star = snapshot
           .map(([, data]) => data ?? [])
           .flat()
           .find((item) => item.id === id);
         if (star === undefined) return current;
         return [...current.filter((item) => item.id !== id), { ...star, ...input }];
       });
-      return { previousStars, previousNorthStars };
+      return { snapshot, previousNorthStars };
     },
     onError: (_error, _vars, context) => {
       if (context === undefined) return;
-      for (const [key, data] of context.previousStars) client.setQueryData(key, data);
+      restoreLists(client, context.snapshot);
       if (context.previousNorthStars !== undefined) client.setQueryData(["north-stars"], context.previousNorthStars);
     },
     onSettled: () => {
@@ -114,17 +113,13 @@ export function useStarMutations(refresh: () => void): StarMutations {
     },
     onMutate: async ({ id, completed }) => {
       await client.cancelQueries({ queryKey: ["redshift-stars"] });
-      const previousStars = client.getQueriesData<RedshiftStar[]>({ queryKey: ["redshift-stars"] });
-      client.setQueriesData<RedshiftStar[]>({ queryKey: ["redshift-stars"] }, (current) =>
-        current === undefined
-          ? current
-          : current.map((star) => (star.id === id ? { ...star, completedAt: completed ? Date.now() : null } : star)),
-      );
-      return { previousStars };
+      const snapshot = snapshotLists<RedshiftStar>(client, ["redshift-stars"]);
+      patchListItems<RedshiftStar>(client, ["redshift-stars"], id, { completedAt: completed ? Date.now() : null });
+      return { snapshot };
     },
     onError: (_error, _vars, context) => {
       if (context === undefined) return;
-      for (const [key, data] of context.previousStars) client.setQueryData(key, data);
+      restoreLists(client, context.snapshot);
     },
     onSettled: () => {
       refresh();

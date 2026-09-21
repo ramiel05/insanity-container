@@ -25,4 +25,4 @@ COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/apps ./apps
 COPY --from=build /app/packages ./packages
 EXPOSE 3000
-CMD ["bun", "apps/server/src/main.ts"]
+CMD ["bun", "apps/server/src/index.ts"]
