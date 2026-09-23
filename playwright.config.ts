@@ -8,6 +8,7 @@ const isCI = Boolean(process.env.CI);
 
 export default defineConfig({
   testDir: "./tests/browser",
+  globalSetup: "./tests/browser/global-setup.ts",
   use: { baseURL: "http://localhost:5173" },
   webServer: [
     {

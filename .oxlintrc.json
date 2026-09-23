@@ -98,7 +98,7 @@
   },
   "overrides": [
     {
-      "files": ["**/{playwright,vite,astro,drizzle}.config.*"],
+      "files": ["**/{playwright,vite,astro,drizzle}.config.*", "tests/browser/global-setup.ts"],
       "rules": {
         "import/no-default-export": "off"
       }
