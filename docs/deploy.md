@@ -42,7 +42,7 @@ Later deploys are a single `fly deploy` from the laptop — no CI pipeline.
 - Fly secrets (runtime): `DATABASE_URL` (`libsql://…`), `DATABASE_AUTH_TOKEN`, `CLERK_SECRET_KEY`. With a remote `DATABASE_URL`, the server runs an embedded replica (`file:replica.db` synced from the Turso primary): reads local, writes remote.
 - Build-time (web client): `VITE_CLERK_PUBLISHABLE_KEY` via `fly deploy --build-arg` (or `[build.args]` in `fly.toml`).
 - Optional (runtime): `STATIC_WEB_ROOT` / `STATIC_ATLAS_ROOT` override the static-serving roots; the defaults are baked for the image layout (`/app`). Static serving itself is active only when `NODE_ENV=production` (set in the Dockerfile).
-- Browser tests: `E2E_CLERK_USER_EMAIL` (owner's Clerk user) alongside the local dev keys — see `AGENTS.md`.
+- Browser tests: `E2E_CLERK_USER_EMAIL` (owner's Clerk user), recorded in `apps/server/.env` next to `CLERK_SECRET_KEY` — see `AGENTS.md`.
 - Local dev: no cloud accounts or Turso access — a local SQLite file through the same libSQL driver, with only the two Clerk development keys recorded in the gitignored `.env` files (see `AGENTS.md`).
 - Tests never touch the production database: they migrate temporary `file:` databases and inject fake authenticators.
 - **Auth is the only cross-environment service.** Every environment (local dev, browser tests, production) shares one Clerk development instance and one account — data stays environment-local (local `file:` databases vs Turso). Clerk therefore requires network access in every environment, including local dev; token verification fetches JWKS from Clerk's API.
