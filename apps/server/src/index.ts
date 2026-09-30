@@ -12,6 +12,10 @@ import {
 import { createRedshiftNestedStarRoutes, createRedshiftRoutes, createRedshiftStarRoutes } from "#routes/redshifts";
 import { createSettingsRoutes } from "#routes/settings";
 
+// MANUFACTURED FAILURE: intentionally broken to verify the pipeline's
+// stopped-machine invariant on failure (issue #16, ADR 0010). Revert this commit.
+const manufacturedTypeFailure: string = 42;
+
 export function createApp(database = db, authenticator: Authenticator = rejectAll, corsEnabled = false) {
   const app = new Hono();
   if (corsEnabled) app.use("/api/*", cors());
