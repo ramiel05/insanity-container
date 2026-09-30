@@ -21,6 +21,8 @@ Every push to `origin/master` (merge or direct push — there is no branch prote
 
 **Serial deploys:** a single `concurrency` group with `cancel-in-progress: false` makes back-to-back pushes execute one after another; a second deploy never interrupts the first one's maintenance window.
 
+**Autostart caveat:** `fly.toml` keeps `auto_start_machines = true`, so after a pipeline failure any incoming request can wake a stopped machine — it serves the **last-good release** (safe when nothing had migrated; that is also how a laptop `fly releases rollback` becomes reachable again). If migrations ran but the deploy failed, reconcile the database first (see the playbook) so a woken machine never serves old code against a moved-ahead schema.
+
 ### One-off setup: GitHub repository secrets
 
 Before the first pipeline run, add four **repository secrets** (not environments):
@@ -58,9 +60,9 @@ fly deploy --build-arg VITE_CLERK_PUBLISHABLE_KEY=<publishable-key>
 
 When a pipeline run fails, the production machine is stopped (ADR 0010). The failure email states which step failed; recover from the laptop:
 
-1. **Validate-stage failure** (lint, format, typecheck, tests): the machine may still be running — the window had not opened yet. Fix, push, let the pipeline redeploy. No downtime occurred.
+1. **Validate-stage failure** (lint, format, typecheck, tests): the failure path still stops the machine — one rule, failure ⇒ door closed, even though nothing had migrated. Fix, push, let the pipeline redeploy.
 2. **Failure after the window opened** (migrate, deploy, or verification): the machine is intentionally stopped. Read the failing step:
-   - *Migrations failed*: the database may be partially migrated. Inspect with `turso db shell polaris` and reconcile by hand before anything else runs; then fix and push.
+   - *Migrations failed*: the database may be partially migrated. Inspect with `turso db shell insanity-container` and reconcile by hand before anything else runs; then fix and push.
    - *Deploy failed*: roll forward by fixing the code and pushing again (the pipeline will migrate nothing new and redeploy), or roll back from the laptop — rollback is always safe to run because the window is closed:
      ```bash
      fly releases rollback
