@@ -52,16 +52,17 @@ jobs:
         run: flyctl deploy --remote-only --build-arg VITE_CLERK_PUBLISHABLE_KEY=${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
 
       - name: Verify deployment
+        timeout-minutes: 5
         run: |
           for _ in $(seq 1 30); do
-            if curl -fsS https://polaris-wayfinder.fly.dev/health | grep -q '"ok":true'; then
+            if curl -fsS -m 10 https://polaris-wayfinder.fly.dev/health | grep -q '"ok":true'; then
               echo "health check passed"
               break
             fi
             sleep 2
           done
-          curl -fsS https://polaris-wayfinder.fly.dev/health | grep -q '"ok":true'
-          status_code=$(curl -s -o /dev/null -w '%{http_code}' https://polaris-wayfinder.fly.dev/api/blueshifts)
+          curl -fsS -m 10 https://polaris-wayfinder.fly.dev/health | grep -q '"ok":true'
+          status_code=$(curl -s -m 10 -o /dev/null -w '%{http_code}' https://polaris-wayfinder.fly.dev/api/blueshifts)
           test "$status_code" -eq 401
 
       - name: Close failure path (leave machine stopped)
