@@ -14,3 +14,9 @@ Deploys now run in CI: a single GitHub Actions workflow on every push to `origin
 - A failed post-migration state can leave the database ahead of the deployed code; the machine stays down until a human reconciles it. Data-safe but silently offline until the failure email is read.
 - Rollback (`fly releases rollback`) is always safe to run because it happens with the window closed.
 - There is no branch protection: any push to `origin/master` deploys. Trigger switching to version tags when the app opens for public use (tracked in a GitHub issue).
+
+## Amended (2026-10-01): migrations run only in CI
+
+The pipeline's migrate step exists to put "what happened to the database" inside one audited script. A laptop `db:migrate` against production reintroduces the untracked terminal-scrolling record this pipeline was built to eliminate (no actor, no time, no intent recorded) and papers over the real failure: if the CI migrate step fails, the pipeline is broken — secrets, connectivity, or workflow bug — and must be fixed rather than routed around. A migration that seems to require a manual run is an incident smell, and the incident is the pipeline.
+
+So: migrations against production are a CI-only action, enforced in code. `drizzle.config.ts` (via `apps/server/src/db/drizzle-connection.ts`) throws on a remote `DATABASE_URL` unless `CI=true` (the value GitHub Actions sets; any other value, including `CI=false`, is treated as a laptop); the laptop fallback deploy is image-only and never migrates. The single sanctioned hand-intervention remains incident repair of a partially-applied migration (inspect and reconcile with `turso db shell` per the runbook), after which the fix still rides CI and the intervention is recorded. In the same amendment, the pipeline's database credentials are scoped to the migrate step alone (previously job-level), so the validation gate runs credential-free and tests structurally cannot reach production.

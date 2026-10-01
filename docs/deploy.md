@@ -12,7 +12,7 @@ Every push to `origin/master` (merge or direct push — there is no branch prote
 
 1. **Validation gate** — `lint`, `format:check`, `typecheck`, `test` with Bun, exactly as `AGENTS.md` prescribes. The Playwright browser suite stays local and is not part of the gate.
 2. **Maintenance window opens** — the Fly app machine(s) are stopped. While the window is closed the app is unreachable.
-3. **Migrations** — `bun --cwd apps/server db:migrate` runs against Turso with `DATABASE_URL`/`DATABASE_AUTH_TOKEN` from repository secrets, honoring ADR 0009 (generated migration files are the only thing that shapes the database).
+3. **Migrations** — `bun --cwd apps/server db:migrate` runs against Turso with `DATABASE_URL`/`DATABASE_AUTH_TOKEN` from repository secrets, honoring ADR 0009 (generated migration files are the only thing that shapes the database). Those credentials are scoped to this step alone (never job-level): the validation gate runs credential-free, so tests cannot reach production. Migrations against production run only here — `drizzle-kit` throws on a remote `DATABASE_URL` outside `CI` (ADR 0010).
 4. **Deploy** — `fly deploy --remote-only` with the Fly remote builder, passing the web client's `VITE_CLERK_PUBLISHABLE_KEY` as a build argument. On success the new release boots the machine; there is no separate machine-start step.
 5. **Verification** — `GET /health` must return `{"ok":true}` without authentication, and a signed-out request to `/api/blueshifts` must get a 401.
 6. **Window reopens** — implicitly, when verification passes: the deploy already booted the new release.
@@ -54,7 +54,7 @@ The workflow itself already automates items 4 and 5; the human checklist covers 
 fly deploy --build-arg VITE_CLERK_PUBLISHABLE_KEY=<publishable-key>
 ```
 
-**Warning:** this bypasses every gate — no lint/typecheck/tests, no migration step, no schema sync — and does not close and reopen the maintenance window. It must normally not be used for changing code or schema; if migrations ran recently in CI and nothing else changed, an image-only redeploy through the fallback is acceptable. Prefer the pipeline for anything that moves code or schema forward.
+**Warning:** this bypasses the validation gate and does not close and reopen the maintenance window. It also never runs migrations: `drizzle-kit` blocks a remote `DATABASE_URL` outside `CI` (ADR 0010), so the fallback is image-only by construction — schema changes wait for the pipeline. An image-only redeploy is acceptable when migrations ran recently in CI and nothing else changed; for anything that moves code or schema forward, fix the pipeline and let it deploy.
 
 ## Failure and rollback playbook
 
@@ -62,7 +62,7 @@ When a pipeline run fails, the production machine is stopped (ADR 0010). The fai
 
 1. **Validate-stage failure** (lint, format, typecheck, tests): the failure path still stops the machine — one rule, failure ⇒ door closed, even though nothing had migrated. Fix, push, let the pipeline redeploy.
 2. **Failure after the window opened** (migrate, deploy, or verification): the machine is intentionally stopped. Read the failing step:
-   - *Migrations failed*: the database may be partially migrated. Inspect with `turso db shell insanity-container` and reconcile by hand before anything else runs; then fix and push.
+   - *Migrations failed*: the database may be partially migrated. Inspect with `turso db shell insanity-container` and reconcile by hand before anything else runs — the one sanctioned hand-intervention against the production schema: it repairs a partially-applied migration, it does not run one. Record what was done (issue or incident note). Then fix and push so the pipeline converges the schema; `db:migrate` from the laptop is blocked by the CI gate (ADR 0010) and is the wrong response here — the pipeline itself is the thing to fix.
    - *Deploy failed*: roll forward by fixing the code and pushing again (the pipeline will migrate nothing new and redeploy), or roll back from the laptop — rollback is always safe to run because the window is closed:
      ```bash
      fly releases rollback
@@ -71,14 +71,18 @@ When a pipeline run fails, the production machine is stopped (ADR 0010). The fai
    - *Verification failed after a successful deploy*: either roll forward (fix, push) or `fly releases rollback` from the laptop.
 3. After recovery, confirm the app answers `/health` — the pipeline's next successful run reopens the window; a laptop rollback does not, so start the machine (`fly machines start <id> --app polaris-wayfinder`) once the rollback image is up and smoke-check it.
 
+### Embedded replica local-state recovery
+
+The replica's files travel together: `replica.db` plus its `-info`, `-wal`, and `-shm` sidecars. Removing only the main file while the sync metadata survives bricks the next boot (`Sync(InvalidLocalState): metadata file exists but db file does not`). Recovery: delete the whole `replica.db*` set and reboot — the replica re-initializes and re-syncs from the Turso primary, so nothing durable is lost.
+
 ## Environment contract
 
-- Fly secrets (runtime): `DATABASE_URL` (`libsql://…`), `DATABASE_AUTH_TOKEN`, `CLERK_SECRET_KEY`. With a remote `DATABASE_URL`, the server runs an embedded replica (`file:replica.db` synced from the Turso primary): reads local, writes remote.
+- Fly secrets (runtime): `DATABASE_URL` (`libsql://…`), `DATABASE_AUTH_TOKEN`, `CLERK_SECRET_KEY`. With a remote `DATABASE_URL`, the server runs an embedded replica (`file:replica.db` synced from the Turso primary): reads local, writes remote. The guard cuts both ways: `connectionFromEnv` throws unless `NODE_ENV=production` when the URL is remote, so a local `.env` cannot point dev at Turso (ADR 0008).
 - Build-time (web client): `VITE_CLERK_PUBLISHABLE_KEY` — in CI it is a repository secret passed as `--build-arg`; via laptop `fly deploy --build-arg` (or `[build.args]` in `fly.toml`).
 - GitHub repository secrets (CI only): `FLY_API_TOKEN`, `DATABASE_URL`, `DATABASE_AUTH_TOKEN`, `VITE_CLERK_PUBLISHABLE_KEY`.
 - Optional (runtime): `STATIC_WEB_ROOT` / `STATIC_ATLAS_ROOT` override the static-serving roots; the defaults are baked for the image layout (`/app`). Static serving itself is active only when `NODE_ENV=production` (set in the Dockerfile).
 - Browser tests: `E2E_CLERK_USER_EMAIL` (owner's Clerk user), recorded in `apps/server/.env` next to `CLERK_SECRET_KEY` — see `AGENTS.md`.
-- Local dev: no cloud accounts or Turso access — a local SQLite file through the same libSQL driver, with only the two Clerk development keys recorded in the gitignored `.env` files (see `AGENTS.md`).
+- Local dev: no cloud accounts or Turso access — a local SQLite file through the same libSQL driver, with only the Clerk development keys recorded in the gitignored `.env` files (see `AGENTS.md`); a remote `DATABASE_URL` throws at boot (ADR 0008).
 - Tests never touch the production database: they migrate temporary `file:` databases and inject fake authenticators.
 - **Auth is the only cross-environment service.** Every environment (local dev, browser tests, production) shares one Clerk development instance and one account — data stays environment-local (local `file:` databases vs Turso). Clerk therefore requires network access in every environment, including local dev; token verification fetches JWKS from Clerk's API.
 

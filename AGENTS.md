@@ -25,13 +25,13 @@ bun --cwd apps/atlas dev
 bun --cwd apps/server db:generate
 ```
 
-Commit the generated file under `apps/server/drizzle/`. Apply migrations to the local dev database (or any database, given `DATABASE_URL`/`DATABASE_AUTH_TOKEN`):
+Commit the generated file under `apps/server/drizzle/`. Apply migrations to the local dev database:
 
 ```bash
 bun --cwd apps/server db:migrate
 ```
 
-A fresh clone bootstraps by running all migrations against an empty database — the same command. `drizzle-kit push` is retired and blocked against remote (`libsql://`) databases. Tests migrate temp `file:` databases automatically; no other setup is needed. A drift-guard test fails if the migration files fall behind `schema.ts`.
+A fresh clone bootstraps by running all migrations against an empty database — the same command. `drizzle-kit push` is retired and blocked against remote (`libsql://`) databases. Migrations against production run only in CI: `drizzle-kit` throws on a remote `DATABASE_URL` outside `CI` (see `docs/adr/0010-ci-deploy-pipeline-with-maintenance-window.md`). A laptop migration that seems necessary is an incident smell — the pipeline is what needs fixing (see `docs/deploy.md`), and the fix rides CI. Tests migrate temp `file:` databases automatically; no other setup is needed. A drift-guard test fails if the migration files fall behind `schema.ts`.
 
 ### Clerk (local dev)
 
@@ -40,7 +40,9 @@ The API rejects unauthenticated requests, and the web app requires a Clerk publi
 - `apps/server/.env` → `CLERK_SECRET_KEY`
 - `apps/web/.env` → `VITE_CLERK_PUBLISHABLE_KEY`
 
-No Turso connection is needed for local development: with no `DATABASE_URL` set, the server uses a local SQLite file through the same libSQL driver.
+These are the only keys those files ever hold (`apps/server/.env` additionally gets `E2E_CLERK_USER_EMAIL` for browser tests). Database credentials (`DATABASE_URL`/`DATABASE_AUTH_TOKEN`) live only in Fly and GitHub repository secrets (see `docs/deploy.md`).
+
+No Turso connection is needed for local development: with no `DATABASE_URL` set, the server uses a local SQLite file through the same libSQL driver — and this is enforced, not hoped for: the server throws at boot when `DATABASE_URL` is remote and `NODE_ENV` is not `production` (the Fly image sets it), so database credentials that leak into a local environment fail loudly instead of silently pointing dev at production (see `docs/adr/0008-cloud-deployment-on-fly-turso-and-clerk.md`).
 
 **Auth is the only cross-environment service.** Local dev, browser tests, and the Fly deployment all talk to the same Clerk development instance (same account, same users — signing in on localhost with your GitHub account is the same Clerk user as in production). Data never crosses environments: local dev writes only to a local SQLite file, Turso is production-only. The corollary: Clerk needs network access even for local dev and tests, because token verification fetches JWKS from Clerk's API — a fully offline dev session 401s everything. "Hermetic" local development was never about the identity provider.
 
