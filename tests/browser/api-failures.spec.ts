@@ -40,7 +40,8 @@ test("shows an inline error and keeps focus when creating a Star fails", async (
   await expect(page.getByRole("heading", { name: "Morning orbit" })).toBeVisible();
   await page.getByLabel("New Star title").fill("Sketch the route");
   await page.getByRole("button", { name: "Add Star" }).click();
-  const alert = page.getByRole("alert");
+  const panel = page.locator("section").filter({ hasText: "Selected Blueshift" });
+  const alert = panel.getByRole("alert");
   await expect(alert).toBeVisible();
   await expect(alert).toContainText("Couldn't save a Star");
   await expect(page.getByLabel("New Star title")).toBeFocused();
