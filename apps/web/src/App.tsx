@@ -4,28 +4,24 @@ import { Header } from "./components/Header";
 import { Legend } from "./components/Legend";
 import { QueryStateBanner } from "./components/QueryStateBanner";
 import { Workspace } from "./components/Workspace";
-import { useShiftMutations, useWorkspaceQueries } from "#lib/hooks";
-import { useStarMutations } from "#lib/star-hooks";
-import type { ConfirmState, Kind, ModalKind, Selected } from "#lib/kinds";
+import { useWorkspace } from "#lib/workspace";
+import type { ConfirmState, ModalKind, Selected } from "#lib/kinds";
 
 export function App(): React.JSX.Element {
   const [selected, setSelected] = useState<Selected>(null);
   const [modal, setModal] = useState<ModalKind>(null);
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
-  const workspace = useWorkspaceQueries(selected);
-  const shiftMutations = useShiftMutations({
-    refresh: workspace.refresh,
-    onSelected: (kind: Kind, id: string) => {
+  const workspace = useWorkspace(selected, {
+    onSelected: (kind, id) => {
       setSelected({ kind, id });
     },
-    onDeleted: (kind: Kind, id: string) => {
+    onDeleted: (kind, id) => {
       if (selected?.kind === kind && selected.id === id) setSelected(null);
     },
     onCloseModal: () => {
       setModal(null);
     },
   });
-  const starMutations = useStarMutations(workspace.refresh);
 
   const confirmDelete = (message: string, action: () => void): void => {
     setConfirm({ message, action });
@@ -50,8 +46,6 @@ export function App(): React.JSX.Element {
         <Legend />
         <Workspace
           workspace={workspace}
-          shiftMutations={shiftMutations}
-          starMutations={starMutations}
           selected={selected}
           modal={modal}
           confirm={confirm}

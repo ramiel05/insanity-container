@@ -1,15 +1,12 @@
 import type React from "react";
 import { AppModals } from "./AppModals";
 import { MainGrid } from "./MainGrid";
-import type { WorkspaceQueries, ShiftMutations } from "#lib/hooks";
-import type { StarMutations } from "#lib/star-hooks";
+import type { Workspace } from "#lib/workspace";
 import type { ConfirmState, Kind, ModalKind, Selected } from "#lib/kinds";
-import type { BlueshiftStar, Magnitude, RedshiftStar } from "@proj/shared";
+import type { Magnitude } from "@proj/shared";
 
 export function ShiftsArea({
   workspace,
-  shiftMutations,
-  starMutations,
   selected,
   modal,
   confirm,
@@ -17,9 +14,7 @@ export function ShiftsArea({
   setModal,
   confirmDelete,
 }: {
-  readonly workspace: WorkspaceQueries;
-  readonly shiftMutations: ShiftMutations;
-  readonly starMutations: StarMutations;
+  readonly workspace: Workspace;
   readonly selected: Selected;
   readonly modal: ModalKind;
   readonly confirm: ConfirmState | null;
@@ -32,56 +27,51 @@ export function ShiftsArea({
       <MainGrid
         workspace={workspace}
         selected={selected}
-        shiftMutations={shiftMutations}
-        starMutations={starMutations}
-        onSelect={(kind: Kind, id: string) => {
+        onSelect={(kind, id) => {
           setSelected({ kind, id });
         }}
-        onDeleteShift={(kind: Kind, id: string, name: string) => {
-          const mutation = kind === "blueshift" ? shiftMutations.deleteBlueshift : shiftMutations.deleteRedshift;
+        onDeleteShift={(kind, id, name) => {
           confirmDelete(`Delete the ${kind === "blueshift" ? "Blueshift" : "Redshift"} "${name}"?`, () => {
-            mutation.mutate(id);
+            workspace.ops.deleteShift(kind, id);
           });
         }}
         onSetMagnitude={(kind: Kind, id: string, magnitude: Magnitude) => {
-          if (kind === "blueshift") shiftMutations.updateBlueshift.mutate({ id, magnitude });
-          else shiftMutations.updateRedshift.mutate({ id, magnitude });
+          workspace.ops.updateShift(kind, id, { magnitude });
         }}
         onCreateStar={(title: string) => {
           const blueshift = workspace.selectedBlueshift;
           if (!blueshift) throw new Error("Cannot create a Star without a selected Blueshift");
-          starMutations.blueshift.createStar.mutate({ id: blueshift.id, title });
+          workspace.ops.createStar("blueshift", blueshift.id, title);
         }}
         onCreateRedshiftStar={(title: string) => {
           const redshift = workspace.selectedRedshift;
           if (!redshift) throw new Error("Cannot create a Star without a selected Redshift");
-          starMutations.redshift.createStar.mutate({ id: redshift.id, title });
+          workspace.ops.createStar("redshift", redshift.id, title);
         }}
-        onToggleStar={(star: BlueshiftStar, completed: boolean) => {
-          starMutations.blueshift.updateStar.mutate({ id: star.id, completed });
+        onToggleStar={(starId: string, completed: boolean) => {
+          workspace.ops.updateStar("blueshift", starId, { completed });
         }}
-        onToggleRedshiftStar={(star: RedshiftStar, completed: boolean) => {
-          starMutations.redshift.updateStar.mutate({ id: star.id, completed });
+        onToggleRedshiftStar={(starId: string, completed: boolean) => {
+          workspace.ops.updateStar("redshift", starId, { completed });
         }}
-        onNorthStar={(star: BlueshiftStar, northStar: boolean) => {
-          starMutations.blueshift.updateStar.mutate({ id: star.id, northStar });
+        onNorthStar={(starId: string, northStar: boolean) => {
+          workspace.ops.updateStar("blueshift", starId, { northStar });
         }}
-        onDeleteStar={(star: BlueshiftStar) => {
-          confirmDelete(`Delete the Star "${star.title}"?`, () => {
-            starMutations.blueshift.deleteStar.mutate(star.id);
+        onDeleteStar={(starId: string, title: string) => {
+          confirmDelete(`Delete the Star "${title}"?`, () => {
+            workspace.ops.deleteStar("blueshift", starId);
           });
         }}
-        onDeleteRedshiftStar={(star: RedshiftStar) => {
-          confirmDelete(`Delete the Star "${star.title}"?`, () => {
-            starMutations.redshift.deleteStar.mutate(star.id);
+        onDeleteRedshiftStar={(starId: string, title: string) => {
+          confirmDelete(`Delete the Star "${title}"?`, () => {
+            workspace.ops.deleteStar("redshift", starId);
           });
         }}
       />
       <AppModals
+        workspace={workspace}
         modal={modal}
-        settings={workspace.settings.data}
         confirm={confirm}
-        shiftMutations={shiftMutations}
         onClose={() => {
           setModal(null);
         }}

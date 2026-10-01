@@ -117,7 +117,11 @@
       }
     },
     {
-      "files": ["apps/web/src/lib/hooks.ts", "apps/web/src/lib/star-hooks.ts"],
+      "files": [
+        "apps/web/src/lib/workspace.ts",
+        "apps/web/src/lib/workspace-cache.ts",
+        "apps/web/src/lib/workspace-mutations.ts"
+      ],
       "rules": {
         "no-undefined": "off"
       }

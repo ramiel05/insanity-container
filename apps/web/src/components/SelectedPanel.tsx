@@ -1,8 +1,12 @@
 import type React from "react";
 import { BlueshiftPanel } from "./BlueshiftPanel";
 import { RedshiftPanel } from "./RedshiftPanel";
-import type { StarErrors } from "#lib/star-hooks";
 import type { Blueshift, BlueshiftStar, Redshift, RedshiftStar } from "@proj/shared";
+
+export interface StarErrors {
+  readonly latest?: string;
+  readonly create?: string;
+}
 
 export function SelectedPanel({
   selectedBlueshift,
@@ -27,11 +31,11 @@ export function SelectedPanel({
   readonly starErrors: { readonly blueshift: StarErrors; readonly redshift: StarErrors };
   readonly onCreateStar: (title: string) => void;
   readonly onCreateRedshiftStar: (title: string) => void;
-  readonly onToggleStar: (star: BlueshiftStar, completed: boolean) => void;
-  readonly onToggleRedshiftStar: (star: RedshiftStar, completed: boolean) => void;
-  readonly onNorthStar: (star: BlueshiftStar, northStar: boolean) => void;
-  readonly onDeleteStar: (star: BlueshiftStar) => void;
-  readonly onDeleteRedshiftStar: (star: RedshiftStar) => void;
+  readonly onToggleStar: (starId: string, completed: boolean) => void;
+  readonly onToggleRedshiftStar: (starId: string, completed: boolean) => void;
+  readonly onNorthStar: (starId: string, northStar: boolean) => void;
+  readonly onDeleteStar: (starId: string, title: string) => void;
+  readonly onDeleteRedshiftStar: (starId: string, title: string) => void;
 }): React.JSX.Element {
   if (selectedBlueshift) {
     return (

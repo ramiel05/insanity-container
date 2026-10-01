@@ -18,9 +18,9 @@ export function BlueshiftPanel({
   readonly starError?: string;
   readonly starCreateError?: string;
   readonly onCreateStar: (title: string) => void;
-  readonly onToggle: (star: BlueshiftStar, completed: boolean) => void;
-  readonly onNorthStar: (star: BlueshiftStar, northStar: boolean) => void;
-  readonly onDelete: (star: BlueshiftStar) => void;
+  readonly onToggle: (starId: string, completed: boolean) => void;
+  readonly onNorthStar: (starId: string, northStar: boolean) => void;
+  readonly onDelete: (starId: string, title: string) => void;
 }): React.JSX.Element {
   const [title, setTitle] = useState<string>("");
   const [dismissedCreateError, setDismissedCreateError] = useState<string | null>(null);
@@ -78,13 +78,13 @@ export function BlueshiftPanel({
             key={star.id}
             star={star}
             onToggle={(completed: boolean) => {
-              onToggle(star, completed);
+              onToggle(star.id, completed);
             }}
             onNorthStar={(northStar: boolean) => {
-              onNorthStar(star, northStar);
+              onNorthStar(star.id, northStar);
             }}
             onDelete={() => {
-              onDelete(star);
+              onDelete(star.id, star.title);
             }}
           />
         ))}

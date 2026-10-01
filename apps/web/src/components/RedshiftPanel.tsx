@@ -19,8 +19,8 @@ export function RedshiftPanel({
   readonly starError?: string;
   readonly starCreateError?: string;
   readonly onCreateStar: (title: string) => void;
-  readonly onToggle: (star: RedshiftStar, completed: boolean) => void;
-  readonly onDelete: (star: RedshiftStar) => void;
+  readonly onToggle: (starId: string, completed: boolean) => void;
+  readonly onDelete: (starId: string, title: string) => void;
 }): React.JSX.Element {
   const [title, setTitle] = useState<string>("");
   const [dismissedCreateError, setDismissedCreateError] = useState<string | null>(null);
@@ -79,10 +79,10 @@ export function RedshiftPanel({
             star={star}
             timeZone={timeZone}
             onToggle={(completed: boolean) => {
-              onToggle(star, completed);
+              onToggle(star.id, completed);
             }}
             onDelete={() => {
-              onDelete(star);
+              onDelete(star.id, star.title);
             }}
           />
         ))}
