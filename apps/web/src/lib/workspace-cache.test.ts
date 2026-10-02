@@ -6,9 +6,8 @@ import {
   latestError,
   patchListItems,
   restore,
+  shiftStarsKey,
   snapshot,
-  starShiftKey,
-  starsKey,
 } from "./workspace-cache";
 
 type Row = { readonly id: string; readonly name?: string; readonly magnitude?: number };
@@ -148,16 +147,17 @@ describe("latestError", () => {
   });
 });
 
-describe("starShiftKey", () => {
+describe("shiftStarsKey", () => {
   test("scopes a Stars key to one kind and shift", () => {
-    expect(starShiftKey("blueshift", "b1")).toEqual(["stars", "blueshift", "b1"]);
-    expect(starShiftKey("redshift", "r1")).toEqual(["stars", "redshift", "r1"]);
+    expect(shiftStarsKey("blueshift", "b1")).toEqual(["stars", "blueshift", "b1"]);
+    expect(shiftStarsKey("redshift", "r1")).toEqual(["stars", "redshift", "r1"]);
   });
 
-  test("stays under the stars prefix", () => {
+  test("stays under its kind's stars prefix", () => {
     const c = client();
-    feed(c, starShiftKey("blueshift", "b1"), [blueshiftStar("s1")]);
-    expect(c.getQueriesData({ queryKey: starsKey() })).toHaveLength(1);
+    feed(c, shiftStarsKey("blueshift", "b1"), [blueshiftStar("s1")]);
+    expect(c.getQueriesData({ queryKey: ["stars", "blueshift"] })).toHaveLength(1);
+    expect(c.getQueriesData({ queryKey: ["stars", "redshift"] })).toHaveLength(0);
   });
 });
 

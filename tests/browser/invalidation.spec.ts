@@ -96,3 +96,17 @@ test("promoting a Redshift refetches the Redshift list only", async ({ page }) =
   expect(gets(slice, /^\/api\/blueshifts$/u)).toHaveLength(0);
   expect(gets(slice, /north-stars/u)).toHaveLength(0);
 });
+
+test("deleting a Blueshift refetches the Blueshift list and North Stars", async ({ page }) => {
+  const { calls, mark } = watchApi(page);
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "North Stars" })).toBeVisible();
+  const name = `Fading echo ${crypto.randomUUID().slice(0, 8)}`;
+  await createShift(page, "+ New Blueshift", name);
+  const start = mark();
+  await page.getByLabel(`Delete ${name}`).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Delete" }).click();
+  await expectRefetch(calls, start, /^\/api\/blueshifts$/u);
+  await expectRefetch(calls, start, /^\/api\/north-stars$/u);
+  expect(gets(calls.slice(start), /^\/api\/redshifts$/u)).toHaveLength(0);
+});

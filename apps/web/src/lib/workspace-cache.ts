@@ -25,9 +25,9 @@ export function latestError(views: readonly ErrorView[]): string | undefined {
 
 export const listsKey = (kind: "blueshift" | "redshift"): QueryKey => ["lists", kind];
 export const starsKey = (): QueryKey => ["stars"];
-export const starShiftKey = (kind: "blueshift" | "redshift", shiftId: string): QueryKey => [
-  ...starsKey(),
-  kind,
+export const starsOfKindKey = (kind: "blueshift" | "redshift"): QueryKey => [...starsKey(), kind];
+export const shiftStarsKey = (kind: "blueshift" | "redshift", shiftId: string): QueryKey => [
+  ...starsOfKindKey(kind),
   shiftId,
 ];
 export const northStarsKey = (): QueryKey => ["north-stars"];

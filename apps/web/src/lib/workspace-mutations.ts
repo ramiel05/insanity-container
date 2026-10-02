@@ -8,7 +8,8 @@ import {
   patchListItems,
   restore,
   snapshot,
-  starShiftKey,
+  shiftStarsKey,
+  starsOfKindKey,
   starsKey,
   type BlueshiftStarPatch,
 } from "#lib/workspace-cache";
@@ -105,6 +106,7 @@ export interface KindMutations {
 export function useKindMutations(kind: Kind, handlers: WorkspaceHandlers): KindMutations {
   const client = useQueryClient();
   const apiForKind = kind === "blueshift" ? apiBlueshifts : apiRedshifts;
+  const northStars = kind === "blueshift" ? [northStarsKey()] : [];
 
   const create = useMutation({
     mutationFn: async (input: CreateBlueshift | CreateRedshift) => {
@@ -143,7 +145,7 @@ export function useKindMutations(kind: Kind, handlers: WorkspaceHandlers): KindM
     },
     onSuccess: (_data, id) => {
       handlers.onDeleted(kind, id);
-      invalidate(client, kind === "blueshift" ? [listsKey(kind), northStarsKey()] : [listsKey(kind)]);
+      invalidate(client, [listsKey(kind), ...northStars]);
     },
   });
 
@@ -153,7 +155,7 @@ export function useKindMutations(kind: Kind, handlers: WorkspaceHandlers): KindM
       return created;
     },
     onSuccess: (_data, [shiftId]) => {
-      invalidate(client, [starShiftKey(kind, shiftId)]);
+      invalidate(client, [shiftStarsKey(kind, shiftId)]);
     },
   });
 
@@ -176,7 +178,7 @@ export function useKindMutations(kind: Kind, handlers: WorkspaceHandlers): KindM
       if (context.previousNorthStars !== undefined) client.setQueryData(northStarsKey(), context.previousNorthStars);
     },
     onSettled: () => {
-      invalidate(client, kind === "blueshift" ? [starsKey(), northStarsKey()] : [starsKey()]);
+      invalidate(client, [starsOfKindKey(kind), ...northStars]);
     },
   });
 
@@ -185,7 +187,7 @@ export function useKindMutations(kind: Kind, handlers: WorkspaceHandlers): KindM
       await apiForKind.removeStar(id);
     },
     onSuccess: () => {
-      invalidate(client, kind === "blueshift" ? [starsKey(), northStarsKey()] : [starsKey()]);
+      invalidate(client, [starsOfKindKey(kind), ...northStars]);
     },
   });
 
