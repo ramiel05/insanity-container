@@ -25,8 +25,17 @@ export function latestError(views: readonly ErrorView[]): string | undefined {
 
 export const listsKey = (kind: "blueshift" | "redshift"): QueryKey => ["lists", kind];
 export const starsKey = (): QueryKey => ["stars"];
+export const starShiftKey = (kind: "blueshift" | "redshift", shiftId: string): QueryKey => [
+  ...starsKey(),
+  kind,
+  shiftId,
+];
 export const northStarsKey = (): QueryKey => ["north-stars"];
 export const settingsKey = (): QueryKey => ["settings"];
+
+export function invalidate(client: QueryClient, keys: readonly QueryKey[]): void {
+  for (const key of keys) void client.invalidateQueries({ queryKey: key });
+}
 
 export function patchListItems<T extends { readonly id: string }>(
   client: QueryClient,

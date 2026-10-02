@@ -2,11 +2,13 @@ import { useMutation, useQueryClient, type UseMutationResult } from "@tanstack/r
 import * as api from "#lib/api";
 import {
   applyStarPatch,
+  invalidate,
   listsKey,
   northStarsKey,
   patchListItems,
   restore,
   snapshot,
+  starShiftKey,
   starsKey,
   type BlueshiftStarPatch,
 } from "#lib/workspace-cache";
@@ -100,7 +102,7 @@ export interface KindMutations {
   readonly removeStar: UseMutationResult<void, Error, string>;
 }
 
-export function useKindMutations(kind: Kind, handlers: WorkspaceHandlers, refresh: () => void): KindMutations {
+export function useKindMutations(kind: Kind, handlers: WorkspaceHandlers): KindMutations {
   const client = useQueryClient();
   const apiForKind = kind === "blueshift" ? apiBlueshifts : apiRedshifts;
 
@@ -112,7 +114,7 @@ export function useKindMutations(kind: Kind, handlers: WorkspaceHandlers, refres
     onSuccess: (created) => {
       handlers.onSelected(kind, created.id);
       handlers.onCloseModal();
-      refresh();
+      invalidate(client, [listsKey(kind)]);
     },
   });
 
@@ -131,7 +133,7 @@ export function useKindMutations(kind: Kind, handlers: WorkspaceHandlers, refres
       if (context !== undefined) restore(client, context.taken);
     },
     onSettled: () => {
-      refresh();
+      invalidate(client, [listsKey(kind)]);
     },
   });
 
@@ -141,7 +143,7 @@ export function useKindMutations(kind: Kind, handlers: WorkspaceHandlers, refres
     },
     onSuccess: (_data, id) => {
       handlers.onDeleted(kind, id);
-      refresh();
+      invalidate(client, kind === "blueshift" ? [listsKey(kind), northStarsKey()] : [listsKey(kind)]);
     },
   });
 
@@ -150,8 +152,8 @@ export function useKindMutations(kind: Kind, handlers: WorkspaceHandlers, refres
       const created = await apiForKind.createStar(shiftId, { title });
       return created;
     },
-    onSuccess: () => {
-      refresh();
+    onSuccess: (_data, [shiftId]) => {
+      invalidate(client, [starShiftKey(kind, shiftId)]);
     },
   });
 
@@ -174,7 +176,7 @@ export function useKindMutations(kind: Kind, handlers: WorkspaceHandlers, refres
       if (context.previousNorthStars !== undefined) client.setQueryData(northStarsKey(), context.previousNorthStars);
     },
     onSettled: () => {
-      refresh();
+      invalidate(client, kind === "blueshift" ? [starsKey(), northStarsKey()] : [starsKey()]);
     },
   });
 
@@ -183,7 +185,7 @@ export function useKindMutations(kind: Kind, handlers: WorkspaceHandlers, refres
       await apiForKind.removeStar(id);
     },
     onSuccess: () => {
-      refresh();
+      invalidate(client, kind === "blueshift" ? [starsKey(), northStarsKey()] : [starsKey()]);
     },
   });
 

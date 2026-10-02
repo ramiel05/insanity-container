@@ -1,6 +1,15 @@
 import { describe, expect, test } from "bun:test";
 import { QueryClient } from "@tanstack/react-query";
-import { applyStarPatch, latestError, patchListItems, restore, snapshot } from "./workspace-cache";
+import {
+  applyStarPatch,
+  invalidate,
+  latestError,
+  patchListItems,
+  restore,
+  snapshot,
+  starShiftKey,
+  starsKey,
+} from "./workspace-cache";
 
 type Row = { readonly id: string; readonly name?: string; readonly magnitude?: number };
 
@@ -106,7 +115,7 @@ describe("applyStarPatch (northStar)", () => {
     expect(north?.map((item) => item.id)).toEqual(["s0"]);
   });
 
-  test("completed-only patches leave the north-stars cache to the blanket refresh", () => {
+  test("completed-only patches leave the north-stars cache to the server refresh", () => {
     const c = client();
     feed(c, blueshiftStarsKey, [{ ...blueshiftStar("s1"), northStar: true, completedAt: null }]);
     feed(c, northStarsKey, [blueshiftStar("s1")]);
@@ -136,6 +145,34 @@ describe("latestError", () => {
     const ok = { ...view(30), error: null };
     expect(latestError([ok, failed])).toBe("a");
     expect(latestError([ok])).toBeUndefined();
+  });
+});
+
+describe("starShiftKey", () => {
+  test("scopes a Stars key to one kind and shift", () => {
+    expect(starShiftKey("blueshift", "b1")).toEqual(["stars", "blueshift", "b1"]);
+    expect(starShiftKey("redshift", "r1")).toEqual(["stars", "redshift", "r1"]);
+  });
+
+  test("stays under the stars prefix", () => {
+    const c = client();
+    feed(c, starShiftKey("blueshift", "b1"), [blueshiftStar("s1")]);
+    expect(c.getQueriesData({ queryKey: starsKey() })).toHaveLength(1);
+  });
+});
+
+describe("invalidate", () => {
+  test("marks each listed key stale and leaves unlisted keys alone", () => {
+    const c = client();
+    feed(c, blueshiftListKey, [blueshift("b1")]);
+    feed(c, redshiftListKey, [redshift("r1")]);
+    feed(c, northStarsKey, []);
+
+    invalidate(c, [blueshiftListKey, northStarsKey]);
+
+    expect(c.getQueryState(blueshiftListKey)?.isInvalidated).toBe(true);
+    expect(c.getQueryState(northStarsKey)?.isInvalidated).toBe(true);
+    expect(c.getQueryState(redshiftListKey)?.isInvalidated).toBe(false);
   });
 });
 

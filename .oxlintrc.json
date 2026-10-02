@@ -133,7 +133,7 @@
       }
     },
     {
-      "files": ["tests/browser/auth.ts"],
+      "files": ["tests/browser/auth.ts", "tests/browser/*.spec.ts"],
       "rules": {
         "react-hooks/rules-of-hooks": "off",
         "typescript/prefer-readonly-parameter-types": "off"

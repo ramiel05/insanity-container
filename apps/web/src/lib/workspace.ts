@@ -82,9 +82,8 @@ function useKindState<K extends Kind>(
   list: UseQueryResult<ShiftOf<K>[]>,
   stars: UseQueryResult<StarOf<K>[]>,
   handlers: WorkspaceHandlers,
-  refresh: () => void,
 ): KindState<K> {
-  return { list, stars, mutations: useKindMutations(kind, handlers, refresh) };
+  return { list, stars, mutations: useKindMutations(kind, handlers) };
 }
 
 function stateFor(kind: Kind, blueshift: KindState<"blueshift">, redshift: KindState<"redshift">): KindState<Kind> {
@@ -104,11 +103,6 @@ export function useWorkspaceState(): Workspace {
   const [selected, setSelected] = useState<Selected>(null);
   const [modal, setModal] = useState<ModalKind>(null);
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
-  const refresh = (): void => {
-    void client.invalidateQueries({ queryKey: ["lists"] });
-    void client.invalidateQueries({ queryKey: starsKey() });
-    void client.invalidateQueries({ queryKey: northStarsKey() });
-  };
   const select = (kind: Kind, id: string): void => {
     setSelected({ kind, id });
   };
@@ -135,7 +129,6 @@ export function useWorkspaceState(): Workspace {
       enabled: selected?.kind === "blueshift",
     }),
     handlers,
-    refresh,
   );
   const redshiftState = useKindState(
     "redshift",
@@ -150,7 +143,6 @@ export function useWorkspaceState(): Workspace {
       enabled: selected?.kind === "redshift",
     }),
     handlers,
-    refresh,
   );
   const northStarsQuery = useQuery({ queryKey: northStarsKey(), queryFn: api.listNorthStars });
   const settingsQuery = useQuery({ queryKey: settingsKey(), queryFn: api.getSettings });
@@ -164,7 +156,6 @@ export function useWorkspaceState(): Workspace {
     onSuccess: () => {
       closeModal();
       void client.invalidateQueries({ queryKey: settingsKey() });
-      refresh();
     },
   });
 
