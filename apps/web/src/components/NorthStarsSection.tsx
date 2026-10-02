@@ -1,22 +1,10 @@
 import type React from "react";
+import { useWorkspace } from "#lib/workspace";
 import { StarRow } from "./StarRow";
-import type { BlueshiftStar } from "@proj/shared";
 
-export function NorthStarsSection({
-  northStars,
-  inFocusCount,
-  starError,
-  onSelect,
-  onToggle,
-  onDelete,
-}: {
-  readonly northStars: readonly BlueshiftStar[];
-  readonly inFocusCount: string;
-  readonly starError?: string;
-  readonly onSelect: (star: BlueshiftStar) => void;
-  readonly onToggle: (star: BlueshiftStar, completed: boolean) => void;
-  readonly onDelete: (star: BlueshiftStar) => void;
-}): React.JSX.Element {
+export function NorthStarsSection(): React.JSX.Element {
+  const workspace = useWorkspace();
+  const inFocusCount = workspace.northStarsError ? "—" : `${workspace.northStars.length.toString()} in focus`;
   return (
     <section aria-labelledby="north-stars-heading" className="mb-8 rounded-3xl bg-ink p-5 text-paper shadow-xl sm:p-7">
       <div className="mb-5 flex items-center justify-between">
@@ -25,26 +13,28 @@ export function NorthStarsSection({
         </h2>
         <span className="font-mono text-xs text-paper/60">{inFocusCount}</span>
       </div>
-      {Boolean(starError) && (
+      {Boolean(workspace.errors.latestStar("blueshift")) && (
         <p role="alert" className="mb-4 rounded-xl bg-accent/20 p-3 text-sm text-paper">
           {"Couldn't save a Star: "}
-          {starError}
+          {workspace.errors.latestStar("blueshift")}
         </p>
       )}
       <div className="grid gap-3 sm:grid-cols-2">
-        {northStars.map((star: BlueshiftStar) => (
+        {workspace.northStars.map((star) => (
           <StarRow
             key={star.id}
             star={star}
             dark
             onSelect={() => {
-              onSelect(star);
+              workspace.select("blueshift", star.blueshiftId);
             }}
             onToggle={(completed: boolean) => {
-              onToggle(star, completed);
+              workspace.ops.updateStar("blueshift", star.id, { completed });
             }}
             onDelete={() => {
-              onDelete(star);
+              workspace.confirmDelete(`Delete ${star.title}?`, () => {
+                workspace.ops.deleteStar("blueshift", star.id);
+              });
             }}
           />
         ))}

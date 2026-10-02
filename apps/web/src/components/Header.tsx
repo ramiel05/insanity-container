@@ -1,16 +1,10 @@
 import type React from "react";
 import { UserButton } from "@clerk/clerk-react";
+import { useWorkspace } from "#lib/workspace";
 import { GearIcon } from "./GearIcon";
 
-export function Header({
-  onNewBlueshift,
-  onNewRedshift,
-  onOpenSettings,
-}: {
-  readonly onNewBlueshift: () => void;
-  readonly onNewRedshift: () => void;
-  readonly onOpenSettings: () => void;
-}): React.JSX.Element {
+export function Header(): React.JSX.Element {
+  const workspace = useWorkspace();
   return (
     <header className="mb-10 flex items-end justify-between gap-4">
       <div>
@@ -23,14 +17,18 @@ export function Header({
       <div className="flex gap-2">
         <button
           type="button"
-          onClick={onNewBlueshift}
+          onClick={() => {
+            workspace.openModal("blueshift");
+          }}
           className="rounded-xl bg-blue px-4 py-3 text-sm font-bold text-white hover:bg-blue/90"
         >
           {"+ New Blueshift"}
         </button>
         <button
           type="button"
-          onClick={onNewRedshift}
+          onClick={() => {
+            workspace.openModal("redshift");
+          }}
           className="rounded-xl bg-red px-4 py-3 text-sm font-bold text-white hover:bg-red/90"
         >
           {"+ New Redshift"}
@@ -38,7 +36,9 @@ export function Header({
         <button
           type="button"
           aria-label="Settings"
-          onClick={onOpenSettings}
+          onClick={() => {
+            workspace.openModal("settings");
+          }}
           className="rounded-xl border border-line px-3 py-3 text-muted hover:border-accent hover:text-accent"
         >
           <GearIcon />

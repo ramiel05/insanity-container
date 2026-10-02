@@ -22,7 +22,7 @@ import type {
 } from "@proj/shared";
 import type { Kind } from "#lib/kinds";
 
-export interface WorkspaceDeps {
+export interface WorkspaceHandlers {
   readonly onSelected: (kind: Kind, id: string) => void;
   readonly onDeleted: (kind: Kind, id: string) => void;
   readonly onCloseModal: () => void;
@@ -100,7 +100,7 @@ export interface KindMutations {
   readonly removeStar: UseMutationResult<void, Error, string>;
 }
 
-export function useKindMutations(kind: Kind, deps: WorkspaceDeps, refresh: () => void): KindMutations {
+export function useKindMutations(kind: Kind, handlers: WorkspaceHandlers, refresh: () => void): KindMutations {
   const client = useQueryClient();
   const apiForKind = kind === "blueshift" ? apiBlueshifts : apiRedshifts;
 
@@ -110,8 +110,8 @@ export function useKindMutations(kind: Kind, deps: WorkspaceDeps, refresh: () =>
       return created;
     },
     onSuccess: (created) => {
-      deps.onSelected(kind, created.id);
-      deps.onCloseModal();
+      handlers.onSelected(kind, created.id);
+      handlers.onCloseModal();
       refresh();
     },
   });
@@ -140,7 +140,7 @@ export function useKindMutations(kind: Kind, deps: WorkspaceDeps, refresh: () =>
       await apiForKind.remove(id);
     },
     onSuccess: (_data, id) => {
-      deps.onDeleted(kind, id);
+      handlers.onDeleted(kind, id);
       refresh();
     },
   });

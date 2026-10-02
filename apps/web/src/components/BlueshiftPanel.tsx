@@ -1,29 +1,17 @@
 import type React from "react";
 import { useState } from "react";
+import { useWorkspace } from "#lib/workspace";
 import { StarRow } from "./StarRow";
-import type { Blueshift, BlueshiftStar } from "@proj/shared";
 
-export function BlueshiftPanel({
-  blueshift,
-  stars,
-  starError,
-  starCreateError,
-  onCreateStar,
-  onToggle,
-  onNorthStar,
-  onDelete,
-}: {
-  readonly blueshift: Blueshift;
-  readonly stars: readonly BlueshiftStar[];
-  readonly starError?: string;
-  readonly starCreateError?: string;
-  readonly onCreateStar: (title: string) => void;
-  readonly onToggle: (starId: string, completed: boolean) => void;
-  readonly onNorthStar: (starId: string, northStar: boolean) => void;
-  readonly onDelete: (starId: string, title: string) => void;
-}): React.JSX.Element {
+export function BlueshiftPanel(): React.JSX.Element {
+  const workspace = useWorkspace();
   const [title, setTitle] = useState<string>("");
   const [dismissedCreateError, setDismissedCreateError] = useState<string | null>(null);
+  const blueshift = workspace.selectedShift("blueshift");
+  if (!blueshift) throw new Error("BlueshiftPanel rendered without a selected Blueshift");
+  const stars = workspace.starsOf("blueshift");
+  const starError = workspace.errors.latestStar("blueshift");
+  const starCreateError = workspace.errors.createStar("blueshift");
   const createError = starCreateError !== null && starCreateError !== dismissedCreateError ? starCreateError : null;
   const error = createError ?? starError;
   const valid = title.trim().length > 0;
@@ -47,7 +35,7 @@ export function BlueshiftPanel({
         onSubmit={(event) => {
           event.preventDefault();
           if (!valid) return;
-          onCreateStar(title.trim());
+          workspace.ops.createStar("blueshift", blueshift.id, title.trim());
           setTitle("");
         }}
       >
@@ -73,18 +61,20 @@ export function BlueshiftPanel({
         </button>
       </form>
       <div className="space-y-3">
-        {stars.map((star: BlueshiftStar) => (
+        {stars.map((star) => (
           <StarRow
             key={star.id}
             star={star}
             onToggle={(completed: boolean) => {
-              onToggle(star.id, completed);
+              workspace.ops.updateStar("blueshift", star.id, { completed });
             }}
             onNorthStar={(northStar: boolean) => {
-              onNorthStar(star.id, northStar);
+              workspace.ops.updateStar("blueshift", star.id, { northStar });
             }}
             onDelete={() => {
-              onDelete(star.id, star.title);
+              workspace.confirmDelete(`Delete the Star "${star.title}"?`, () => {
+                workspace.ops.deleteStar("blueshift", star.id);
+              });
             }}
           />
         ))}

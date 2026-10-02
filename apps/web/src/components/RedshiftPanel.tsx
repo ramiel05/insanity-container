@@ -1,29 +1,17 @@
 import type React from "react";
 import { useState } from "react";
+import { useWorkspace } from "#lib/workspace";
 import { RedshiftStarRow } from "./RedshiftStarRow";
-import type { Redshift, RedshiftStar } from "@proj/shared";
 
-export function RedshiftPanel({
-  redshift,
-  stars,
-  timeZone,
-  starError,
-  starCreateError,
-  onCreateStar,
-  onToggle,
-  onDelete,
-}: {
-  readonly redshift: Redshift;
-  readonly stars: readonly RedshiftStar[];
-  readonly timeZone: string;
-  readonly starError?: string;
-  readonly starCreateError?: string;
-  readonly onCreateStar: (title: string) => void;
-  readonly onToggle: (starId: string, completed: boolean) => void;
-  readonly onDelete: (starId: string, title: string) => void;
-}): React.JSX.Element {
+export function RedshiftPanel(): React.JSX.Element {
+  const workspace = useWorkspace();
   const [title, setTitle] = useState<string>("");
   const [dismissedCreateError, setDismissedCreateError] = useState<string | null>(null);
+  const redshift = workspace.selectedShift("redshift");
+  if (!redshift) throw new Error("RedshiftPanel rendered without a selected Redshift");
+  const stars = workspace.starsOf("redshift");
+  const starError = workspace.errors.latestStar("redshift");
+  const starCreateError = workspace.errors.createStar("redshift");
   const createError = starCreateError !== null && starCreateError !== dismissedCreateError ? starCreateError : null;
   const error = createError ?? starError;
   const valid = title.trim().length > 0;
@@ -47,7 +35,7 @@ export function RedshiftPanel({
         onSubmit={(event) => {
           event.preventDefault();
           if (!valid) return;
-          onCreateStar(title.trim());
+          workspace.ops.createStar("redshift", redshift.id, title.trim());
           setTitle("");
         }}
       >
@@ -73,16 +61,18 @@ export function RedshiftPanel({
         </button>
       </form>
       <div className="space-y-3">
-        {stars.map((star: RedshiftStar) => (
+        {stars.map((star) => (
           <RedshiftStarRow
             key={star.id}
             star={star}
-            timeZone={timeZone}
+            timeZone={workspace.timeZone}
             onToggle={(completed: boolean) => {
-              onToggle(star.id, completed);
+              workspace.ops.updateStar("redshift", star.id, { completed });
             }}
             onDelete={() => {
-              onDelete(star.id, star.title);
+              workspace.confirmDelete(`Delete the Star "${star.title}"?`, () => {
+                workspace.ops.deleteStar("redshift", star.id);
+              });
             }}
           />
         ))}

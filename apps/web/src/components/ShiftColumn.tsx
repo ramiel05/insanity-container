@@ -1,30 +1,19 @@
 import type React from "react";
+import { useWorkspace } from "#lib/workspace";
 import { ShiftRow } from "./ShiftRow";
 import { magnitudeLabel, MAGNITUDE_ORDER } from "#lib/magnitude";
-import type { Kind, Selected } from "#lib/kinds";
-import type { Blueshift, Magnitude, Redshift } from "@proj/shared";
-
-type Shift = Blueshift | Redshift;
+import type { Kind } from "#lib/kinds";
 
 export function ShiftColumn({
   kind,
-  shifts,
-  selected,
-  onSelect,
-  onDelete,
-  onMagnitude,
-  deleteError,
   className,
 }: {
   readonly kind: Kind;
-  readonly shifts: readonly Shift[];
-  readonly selected: Selected;
-  readonly onSelect: (kind: Kind, id: string) => void;
-  readonly onDelete: (kind: Kind, id: string, name: string) => void;
-  readonly onMagnitude: (kind: Kind, id: string, magnitude: Magnitude) => void;
-  readonly deleteError?: string;
   readonly className?: string;
 }): React.JSX.Element {
+  const workspace = useWorkspace();
+  const shifts = workspace.shifts(kind);
+  const deleteError = workspace.errors.deleteShift(kind);
   const isRedshift = kind === "redshift";
   const title = isRedshift ? "Redshifts" : "Blueshifts";
   const headingClass = isRedshift ? "text-red" : "text-blue";
@@ -52,15 +41,20 @@ export function ShiftColumn({
                     name={shift.name}
                     goal={shift.goal}
                     magnitude={shift.magnitude}
-                    selected={selected?.kind === kind && selected.id === shift.id}
+                    selected={workspace.selected?.kind === kind && workspace.selected.id === shift.id}
                     onSelect={() => {
-                      onSelect(kind, shift.id);
+                      workspace.select(kind, shift.id);
                     }}
                     onDelete={() => {
-                      onDelete(kind, shift.id, shift.name);
+                      workspace.confirmDelete(
+                        `Delete the ${isRedshift ? "Redshift" : "Blueshift"} "${shift.name}"?`,
+                        () => {
+                          workspace.ops.deleteShift(kind, shift.id);
+                        },
+                      );
                     }}
                     onMagnitude={(next) => {
-                      onMagnitude(kind, shift.id, next);
+                      workspace.ops.updateShift(kind, shift.id, { magnitude: next });
                     }}
                   />
                 ))}
