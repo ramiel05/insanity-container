@@ -35,6 +35,7 @@ export const redshiftStarSchema = z.object({
   redshiftId: z.string(),
   title: z.string(),
   completedAt: z.number().nullable(),
+  fixed: z.boolean(),
   createdAt: z.number(),
 });
 

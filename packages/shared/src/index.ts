@@ -65,11 +65,15 @@ export const redshiftStarSchema = z.object({
   redshiftId: z.string(),
   title: z.string(),
   completedAt: z.number().nullable(),
+  fixed: z.boolean(),
   createdAt: z.number(),
 });
 
-export const createRedshiftStarSchema = z.object({ title: z.string().trim().min(1, "Title is required") });
-export const updateRedshiftStarSchema = z.object({ completed: z.boolean() });
+export const createRedshiftStarSchema = z.object({
+  title: z.string().trim().min(1, "Title is required"),
+  fixed: z.boolean().optional().default(true),
+});
+export const updateRedshiftStarSchema = z.object({ completed: z.boolean() }).strict();
 
 export type Blueshift = Readonly<z.infer<typeof blueshiftSchema>>;
 export type CreateBlueshift = z.infer<typeof createBlueshiftSchema>;
@@ -82,7 +86,7 @@ export type Redshift = Readonly<z.infer<typeof redshiftSchema>>;
 export type CreateRedshift = z.infer<typeof createRedshiftSchema>;
 export type UpdateRedshift = z.infer<typeof updateRedshiftSchema>;
 export type RedshiftStar = Readonly<z.infer<typeof redshiftStarSchema>>;
-export type CreateRedshiftStar = z.infer<typeof createRedshiftStarSchema>;
+export type CreateRedshiftStar = z.input<typeof createRedshiftStarSchema>;
 export type UpdateRedshiftStar = z.infer<typeof updateRedshiftStarSchema>;
 
 export const settingsSchema = z.object({

@@ -80,6 +80,7 @@ export function createRedshiftNestedStarRoutes(database = db) {
         redshiftId: redshift.id,
         title: input.title,
         completedAt: null,
+        fixed: input.fixed,
         createdAt: Date.now(),
       };
       await database.insert(redshiftStars).values(star);

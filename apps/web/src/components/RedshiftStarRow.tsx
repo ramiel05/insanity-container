@@ -16,9 +16,13 @@ export function RedshiftStarRow({
   readonly onDelete: () => void;
 }): React.JSX.Element {
   const [now] = useState<number>(() => Date.now());
-  const completed = isTickedToday(star.completedAt, now, timeZone);
+  const completed = star.fixed ? isTickedToday(star.completedAt, now, timeZone) : star.completedAt !== null;
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-line p-3">
+    <div
+      className={`flex items-center gap-3 rounded-2xl border border-line p-3 ${
+        star.fixed ? "bg-linear-to-r from-red/10 via-red/5 to-transparent" : ""
+      }`}
+    >
       <input
         aria-label={`Complete ${star.title}`}
         type="checkbox"

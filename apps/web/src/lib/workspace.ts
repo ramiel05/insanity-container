@@ -3,7 +3,13 @@ import { useMutation, useQuery, useQueryClient, type UseQueryResult } from "@tan
 import * as api from "#lib/api";
 import { effectiveTimeZone } from "#lib/day";
 import { latestError, listsKey, northStarsKey, settingsKey, starsKey } from "#lib/workspace-cache";
-import { useKindMutations, type KindMutations, type StarPatch, type WorkspaceHandlers } from "#lib/workspace-mutations";
+import {
+  useKindMutations,
+  type CreateStarInput,
+  type KindMutations,
+  type StarPatch,
+  type WorkspaceHandlers,
+} from "#lib/workspace-mutations";
 import type { ConfirmState, Kind, ModalKind, Selected } from "#lib/kinds";
 import type {
   Blueshift,
@@ -21,7 +27,7 @@ export interface WorkspaceOps {
   readonly createShift: (kind: Kind, input: CreateBlueshift | CreateRedshift) => void;
   readonly updateShift: (kind: Kind, id: string, patch: UpdateBlueshift | UpdateRedshift) => void;
   readonly deleteShift: (kind: Kind, id: string) => void;
-  readonly createStar: (kind: Kind, shiftId: string, title: string) => void;
+  readonly createStar: (kind: Kind, shiftId: string, input: CreateStarInput) => void;
   readonly updateStar: <K extends Kind>(kind: K, id: string, patch: StarPatch<K>) => void;
   readonly deleteStar: (kind: Kind, id: string) => void;
   readonly updateSettings: (input: { readonly timezone: string | null }) => void;
@@ -191,8 +197,8 @@ export function useWorkspaceState(): Workspace {
     deleteShift: (kind, id) => {
       forState(kind).mutations.remove.mutate(id);
     },
-    createStar: (kind, shiftId, title) => {
-      forState(kind).mutations.createStar.mutate([shiftId, title]);
+    createStar: (kind, shiftId, input) => {
+      forState(kind).mutations.createStar.mutate([shiftId, input]);
     },
     updateStar: (kind, id, patch) => {
       forState(kind).mutations.updateStar.mutate([id, patch]);

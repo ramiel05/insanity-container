@@ -7,7 +7,12 @@
   {
     "section": "Language",
     "term": "Redshift",
-    "definition": "An open-ended body of work that gathers related Stars, practiced indefinitely and never completed. Its Stars' completions reset at the start of each day. The name evokes receding from a star and the resulting redshift in its observed frequencies."
+    "definition": "An open-ended body of work that gathers related Stars, practiced indefinitely and never completed. The name evokes receding from a star and the resulting redshift in its observed frequencies."
+  },
+  {
+    "section": "Language",
+    "term": "Fixed Star",
+    "definition": "A Star of a Redshift whose completions reset at the start of each day: a tick means today and nothing more. Redshift Stars are Fixed by default; a Redshift Star may instead be created as a plain Star, where done means done and it stays done — buy the squat rack once. The fixed stars return to the sky each night, as this Star returns to each day's work."
   },
   {
     "section": "Language",
@@ -17,7 +22,7 @@
   {
     "section": "Language",
     "term": "Star",
-    "definition": "A single, actionable piece of work belonging to one Blueshift or Redshift."
+    "definition": "A single, actionable piece of work belonging to one Blueshift or Redshift. In a Redshift, a Star is Fixed by default; a Star created without the Fixed designation stays done once completed."
   },
   {
     "section": "Language",

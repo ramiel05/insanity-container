@@ -1,0 +1,1 @@
+ALTER TABLE `redshift_stars` ADD `fixed` integer DEFAULT true NOT NULL;

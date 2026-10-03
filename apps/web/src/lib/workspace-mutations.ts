@@ -33,13 +33,18 @@ export interface WorkspaceHandlers {
 
 export type RedshiftStarPatch = { readonly completed: boolean };
 
+export interface CreateStarInput {
+  readonly title: string;
+  readonly fixed?: boolean;
+}
+
 export type StarPatch<K extends Kind> = K extends "blueshift" ? BlueshiftStarPatch : { readonly completed: boolean };
 
 export interface ApiForKind {
   readonly create: (input: CreateBlueshift | CreateRedshift) => Promise<Blueshift | Redshift>;
   readonly update: (id: string, input: UpdateBlueshift | UpdateRedshift) => Promise<Blueshift | Redshift>;
   readonly remove: (id: string) => Promise<void>;
-  readonly createStar: (shiftId: string, input: { readonly title: string }) => Promise<BlueshiftStar | RedshiftStar>;
+  readonly createStar: (shiftId: string, input: CreateStarInput) => Promise<BlueshiftStar | RedshiftStar>;
   readonly updateStar: (
     id: string,
     input: BlueshiftStarPatch | RedshiftStarPatch,
@@ -94,7 +99,7 @@ export interface KindMutations {
   readonly create: UseMutationResult<Blueshift | Redshift, Error, CreateBlueshift | CreateRedshift>;
   readonly update: UseMutationResult<Blueshift | Redshift, Error, readonly [string, UpdateBlueshift | UpdateRedshift]>;
   readonly remove: UseMutationResult<void, Error, string>;
-  readonly createStar: UseMutationResult<BlueshiftStar | RedshiftStar, Error, readonly [string, string]>;
+  readonly createStar: UseMutationResult<BlueshiftStar | RedshiftStar, Error, readonly [string, CreateStarInput]>;
   readonly updateStar: UseMutationResult<
     BlueshiftStar | RedshiftStar,
     Error,
@@ -150,8 +155,8 @@ export function useKindMutations(kind: Kind, handlers: WorkspaceHandlers): KindM
   });
 
   const createStar = useMutation({
-    mutationFn: async ([shiftId, title]: readonly [string, string]) => {
-      const created = await apiForKind.createStar(shiftId, { title });
+    mutationFn: async ([shiftId, input]: readonly [string, CreateStarInput]) => {
+      const created = await apiForKind.createStar(shiftId, input);
       return created;
     },
     onSuccess: (_data, [shiftId]) => {

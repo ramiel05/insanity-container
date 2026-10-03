@@ -34,6 +34,7 @@ export const redshiftStars = sqliteTable("redshift_stars", {
     .references(() => redshifts.id, { onDelete: "cascade" }),
   title: text("title").notNull(),
   completedAt: integer("completed_at", { mode: "number" }),
+  fixed: integer("fixed", { mode: "boolean" }).notNull().default(true),
   createdAt: integer("created_at", { mode: "number" }).notNull(),
 });
 

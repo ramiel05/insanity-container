@@ -1,6 +1,7 @@
 node_modules/
 dist/
 sqlite.db
+sqlite.db.*.bak
 replica.db*
 *.db-shm
 *.db-wal

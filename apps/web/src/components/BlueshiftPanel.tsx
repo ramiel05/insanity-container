@@ -35,7 +35,7 @@ export function BlueshiftPanel(): React.JSX.Element {
         onSubmit={(event) => {
           event.preventDefault();
           if (!valid) return;
-          workspace.ops.createStar("blueshift", blueshift.id, title.trim());
+          workspace.ops.createStar("blueshift", blueshift.id, { title: title.trim() });
           setTitle("");
         }}
       >

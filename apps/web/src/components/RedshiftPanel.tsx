@@ -6,6 +6,7 @@ import { RedshiftStarRow } from "./RedshiftStarRow";
 export function RedshiftPanel(): React.JSX.Element {
   const workspace = useWorkspace();
   const [title, setTitle] = useState<string>("");
+  const [fixed, setFixed] = useState<boolean>(true);
   const [dismissedCreateError, setDismissedCreateError] = useState<string | null>(null);
   const redshift = workspace.selectedShift("redshift");
   if (!redshift) throw new Error("RedshiftPanel rendered without a selected Redshift");
@@ -35,8 +36,9 @@ export function RedshiftPanel(): React.JSX.Element {
         onSubmit={(event) => {
           event.preventDefault();
           if (!valid) return;
-          workspace.ops.createStar("redshift", redshift.id, title.trim());
+          workspace.ops.createStar("redshift", redshift.id, { title: title.trim(), fixed });
           setTitle("");
+          setFixed(true);
         }}
       >
         <input
@@ -49,6 +51,18 @@ export function RedshiftPanel(): React.JSX.Element {
           }}
           className="min-w-0 flex-1 rounded-xl border border-line bg-surface p-3"
         />
+        <label className="flex shrink-0 items-center gap-2 rounded-xl border border-line bg-surface p-3 text-sm">
+          <input
+            aria-label="Fixed"
+            type="checkbox"
+            checked={fixed}
+            onChange={(event) => {
+              setFixed(event.target.checked);
+            }}
+            className="size-5 accent-red"
+          />
+          {"Fixed"}
+        </label>
         <button
           type="submit"
           disabled={!valid}
