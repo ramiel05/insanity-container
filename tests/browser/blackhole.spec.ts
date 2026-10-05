@@ -1,6 +1,7 @@
 import type { Locator, Page } from "@playwright/test";
 import { expect, test } from "./auth";
 
+const DIMMED = "[data-dimmed]";
 const BLOCKED_TOOLTIP = "A Blackhole exists: complete, delete, or evaporate it before collapsing another Star";
 
 async function createBlueshiftWithStars(page: Page, name: string, titles: readonly string[]): Promise<void> {
@@ -26,7 +27,11 @@ async function clearLeftoverBlackhole(page: Page): Promise<void> {
 }
 
 async function attemptInertClick(control: Locator): Promise<void> {
-  await expect(control.click({ timeout: 500 })).rejects.toThrow();
+  await expect(control.click({ timeout: 500 })).rejects.toThrow(/timeout/iu);
+}
+
+function centreLocator(page: Page): Locator {
+  return page.locator(DIMMED).filter({ has: page.getByRole("button", { name: "Add Star" }) });
 }
 
 function legendLocator(page: Page): Locator {
@@ -164,35 +169,32 @@ test("dims and freezes the workspace while a Blackhole exists, and lifts on comp
   const northStars = page.getByRole("region", { name: "North Stars" });
   const blueshifts = page.getByLabel("Blueshifts", { exact: true });
   const redshifts = page.getByLabel("Redshifts", { exact: true });
-  const centre = page.locator("[data-dimmed]").filter({ has: page.getByRole("button", { name: "Add Star" }) });
-  const dimmedAreas = [
-    northStars.locator("[data-dimmed]"),
-    blueshifts.locator("[data-dimmed]"),
-    redshifts.locator("[data-dimmed]"),
-    centre,
-  ];
+  const centre = centreLocator(page);
+  const dimmedAreas = [northStars.locator(DIMMED), blueshifts.locator(DIMMED), redshifts.locator(DIMMED), centre];
 
-  await expect(page.locator("[data-dimmed]")).toHaveCount(4, { timeout: 500 });
+  await expect(page.locator(DIMMED)).toHaveCount(4, { timeout: 500 });
   for (const area of dimmedAreas) {
     await expect(area).toHaveCSS("filter", "blur(4px)");
     await expect(area).toHaveCSS("pointer-events", "none");
   }
 
   await attemptInertClick(blueshifts.getByLabel(`Delete ${name}`));
+  await attemptInertClick(blueshifts.getByText(name));
   await attemptInertClick(centre.getByLabel("Complete Tidy the deck"));
+  await attemptInertClick(centre.getByText("Tidy the deck"));
   await attemptInertClick(centre.getByLabel("Delete Tidy the deck"));
   await attemptInertClick(centre.getByLabel("New Star title"));
   await expect(centre.getByLabel("Complete Tidy the deck")).not.toBeChecked();
 
   await expect(legendLocator(page)).toBeVisible();
-  await expect(legendLocator(page).locator("[data-dimmed]")).toHaveCount(0);
+  await expect(legendLocator(page).locator(DIMMED)).toHaveCount(0);
   await page.getByRole("button", { name: "+ New Blueshift" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Cancel" }).click();
   await expect(region.getByLabel("Complete Swallow the sky")).toBeEnabled();
 
   await region.getByLabel("Complete Swallow the sky").click();
   await expect(region).toBeHidden();
-  await expect(page.locator("[data-dimmed]")).toHaveCount(0);
+  await expect(page.locator(DIMMED)).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Collapse Tidy the deck into a Blackhole" })).toBeEnabled();
 });
 
@@ -202,12 +204,12 @@ test("the dim lifts when the Blackhole is deleted", async ({ page }) => {
   await createBlueshiftWithStars(page, name, ["Swallow the sky", "Tidy the deck"]);
   await page.getByRole("button", { name: "Collapse Swallow the sky into a Blackhole" }).click();
   const region = page.getByRole("region", { name: "Blackhole" });
-  await expect(page.locator("[data-dimmed]")).toHaveCount(4);
+  await expect(page.locator(DIMMED)).toHaveCount(4);
 
   await region.getByRole("button", { name: "Delete Swallow the sky" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Delete" }).click();
   await expect(region).toBeHidden();
-  await expect(page.locator("[data-dimmed]")).toHaveCount(0);
+  await expect(page.locator(DIMMED)).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Collapse Tidy the deck into a Blackhole" })).toBeEnabled();
 });
 
@@ -224,15 +226,16 @@ test("copies of the Blackhole Star outside the Blackhole section blur with every
 
   const northStars = page.getByRole("region", { name: "North Stars" });
   await expect(northStars.getByText(hole)).toBeVisible();
-  const centre = page.locator("[data-dimmed]").filter({ has: page.getByRole("button", { name: "Add Star" }) });
+  const centre = centreLocator(page);
 
   await attemptInertClick(northStars.getByLabel(`Complete ${hole}`));
   await attemptInertClick(northStars.getByLabel(`Delete ${hole}`));
   await attemptInertClick(centre.getByLabel(`Complete ${hole}`));
+  await attemptInertClick(centre.getByLabel(`Remove ${hole} as North Star`));
 
   await region.getByLabel(`Complete ${hole}`).click();
   await expect(region).toBeHidden();
-  await expect(page.locator("[data-dimmed]")).toHaveCount(0);
+  await expect(page.locator(DIMMED)).toHaveCount(0);
 });
 
 test("the centre panel blurs like everything else when the Blackhole is selected", async ({ page }) => {
@@ -244,7 +247,7 @@ test("the centre panel blurs like everything else when the Blackhole is selected
   await expect(region).toBeVisible();
   await region.getByText("Swallow the sky").click();
 
-  const centre = page.locator("[data-dimmed]").filter({ has: page.getByRole("button", { name: "Add Star" }) });
+  const centre = centreLocator(page);
   await expect(centre.getByText("Swallow the sky")).toBeVisible();
   await expect(centre).toHaveCSS("filter", "blur(4px)");
   await attemptInertClick(centre.getByLabel("Complete Swallow the sky"));
