@@ -1,6 +1,7 @@
 import type React from "react";
 import { AppModals } from "./AppModals";
 import { BlackholeSection } from "./BlackholeSection";
+import { Dimmed } from "./Dimmed";
 import { Header } from "./Header";
 import { Legend } from "./Legend";
 import { NorthStarsSection } from "./NorthStarsSection";
@@ -20,7 +21,9 @@ export function WorkspaceShell(): React.JSX.Element {
         <div className="grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)_16rem]">
           <ShiftColumn kind="redshift" className="order-1 lg:col-start-1 lg:order-none" />
           <section className="order-3 rounded-3xl border border-line bg-paper p-5 sm:p-7 lg:col-start-2 lg:order-none">
-            <SelectedPanel />
+            <Dimmed>
+              <SelectedPanel />
+            </Dimmed>
           </section>
           <ShiftColumn kind="blueshift" className="order-2 lg:col-start-3 lg:order-none" />
         </div>

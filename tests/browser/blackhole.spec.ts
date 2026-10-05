@@ -15,16 +15,6 @@ async function createBlueshiftWithStars(page: Page, name: string, titles: readon
   }
 }
 
-async function clearLeftoverBlackhole(page: Page): Promise<void> {
-  const region = page.getByRole("region", { name: "Blackhole" });
-  if ((await region.count()) === 0) return;
-  await region
-    .getByLabel(/Complete /u)
-    .first()
-    .click();
-  await expect(region).toBeHidden();
-}
-
 async function attemptInertClick(control: Locator): Promise<void> {
   await expect(control.click({ timeout: 500 })).rejects.toThrow(/timeout/iu);
 }
@@ -37,7 +27,7 @@ function legendLocator(page: Page): Locator {
   return page.getByRole("region", { name: "Legend" });
 }
 
-async function bootAndWaitForBlackholes(page: Page): Promise<void> {
+async function clearLeftoverBlackhole(page: Page): Promise<void> {
   const blackholesLoaded = page.waitForResponse((response) => {
     const url = new URL(response.url());
     return url.pathname === "/api/blackholes" && response.request().method() === "GET";
@@ -45,15 +35,24 @@ async function bootAndWaitForBlackholes(page: Page): Promise<void> {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "North Stars" })).toBeVisible();
   await blackholesLoaded;
+  const region = page.getByRole("region", { name: "Blackhole" });
+  const leftover = await region.waitFor({ state: "visible", timeout: 500 }).then(
+    () => true,
+    () => false,
+  );
+  if (!leftover) return;
+  await region
+    .getByLabel(/Complete /u)
+    .first()
+    .click();
+  await expect(region).toBeHidden();
 }
 
 async function setUp(page: Page): Promise<void> {
-  await bootAndWaitForBlackholes(page);
   await clearLeftoverBlackhole(page);
 }
 
 test.afterEach(async ({ page }) => {
-  await bootAndWaitForBlackholes(page);
   await clearLeftoverBlackhole(page);
 });
 
@@ -237,4 +236,22 @@ test("the centre panel blurs like everything else when the Blackhole is selected
   await expect(centre).toHaveCSS("filter", "blur(4px)");
   await attemptInertClick(centre.getByLabel("Complete Swallow the sky"));
   await attemptInertClick(centre.getByLabel("Complete Tidy the deck"));
+});
+
+test("the centre panel blurs with the rest even when no shift is selected", async ({ page }) => {
+  await setUp(page);
+  const name = `Held sky ${crypto.randomUUID().slice(0, 8)}`;
+  await createBlueshiftWithStars(page, name, ["Swallow the sky"]);
+  await page.getByRole("button", { name: "Collapse Swallow the sky into a Blackhole" }).click();
+  const region = page.getByRole("region", { name: "Blackhole" });
+  await expect(region).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "North Stars" })).toBeVisible();
+  const empty = page.getByText("Select a Redshift or Blueshift to see its Stars.");
+  await expect(empty).toBeVisible();
+  const centre = page.locator(DIMMED).filter({ has: empty });
+  await expect(centre).toHaveCSS("filter", "blur(4px)");
+  await expect(centre).toHaveCSS("pointer-events", "none");
+  await expect(page.locator(DIMMED)).toHaveCount(4);
 });
