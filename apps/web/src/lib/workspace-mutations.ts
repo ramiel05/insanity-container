@@ -1,17 +1,20 @@
-import { useMutation, useQueryClient, type UseMutationResult } from "@tanstack/react-query";
+import { useMutation, useQueryClient, type QueryClient, type UseMutationResult } from "@tanstack/react-query";
 import * as api from "#lib/api";
 import {
   applyStarPatch,
+  blackholesKey,
   invalidate,
   listsKey,
   northStarsKey,
   patchListItems,
+  removeStarEverywhere,
   restore,
-  snapshot,
   shiftStarsKey,
+  snapshot,
   starsOfKindKey,
   starsKey,
   type BlueshiftStarPatch,
+  type Snapshot,
 } from "#lib/workspace-cache";
 import type {
   Blueshift,
@@ -108,10 +111,17 @@ export interface KindMutations {
   readonly removeStar: UseMutationResult<void, Error, string>;
 }
 
+async function takeStarSections(client: QueryClient, kind: "blueshift" | "redshift"): Promise<Snapshot> {
+  const sections = kind === "blueshift" ? [northStarsKey(), blackholesKey()] : [];
+  for (const sectionKey of sections) await client.cancelQueries({ queryKey: sectionKey });
+  return [...snapshot(client, starsKey()), ...sections.flatMap((sectionKey) => snapshot(client, sectionKey))];
+}
+
 export function useKindMutations(kind: Kind, handlers: WorkspaceHandlers): KindMutations {
   const client = useQueryClient();
   const apiForKind = kind === "blueshift" ? apiBlueshifts : apiRedshifts;
   const northStars = kind === "blueshift" ? [northStarsKey()] : [];
+  const blackholes = kind === "blueshift" ? [blackholesKey()] : [];
 
   const create = useMutation({
     mutationFn: async (input: CreateBlueshift | CreateRedshift) => {
@@ -150,7 +160,7 @@ export function useKindMutations(kind: Kind, handlers: WorkspaceHandlers): KindM
     },
     onSuccess: (_data, id) => {
       handlers.onDeleted(kind, id);
-      invalidate(client, [listsKey(kind), ...northStars]);
+      invalidate(client, [listsKey(kind), ...northStars, ...blackholes]);
     },
   });
 
@@ -171,19 +181,16 @@ export function useKindMutations(kind: Kind, handlers: WorkspaceHandlers): KindM
     },
     onMutate: async ([id, patch]) => {
       await client.cancelQueries({ queryKey: starsKey() });
-      if (kind === "blueshift") await client.cancelQueries({ queryKey: northStarsKey() });
-      const taken = snapshot(client, starsKey());
-      const previousNorthStars = client.getQueryData<BlueshiftStar[]>(northStarsKey());
+      const taken = await takeStarSections(client, kind);
       applyStarPatch(client, starsKey(), id, patch, Date.now());
-      return { taken, previousNorthStars };
+      return { taken };
     },
     onError: (_error, _vars, context) => {
       if (context === undefined) return;
       restore(client, context.taken);
-      if (context.previousNorthStars !== undefined) client.setQueryData(northStarsKey(), context.previousNorthStars);
     },
     onSettled: () => {
-      invalidate(client, [starsOfKindKey(kind), ...northStars]);
+      invalidate(client, [starsOfKindKey(kind), ...northStars, ...blackholes]);
     },
   });
 
@@ -191,8 +198,19 @@ export function useKindMutations(kind: Kind, handlers: WorkspaceHandlers): KindM
     mutationFn: async (id: string) => {
       await apiForKind.removeStar(id);
     },
+    onMutate: async (id) => {
+      if (kind !== "blueshift") return undefined;
+      await client.cancelQueries({ queryKey: starsKey() });
+      const taken = await takeStarSections(client, kind);
+      removeStarEverywhere(client, starsKey(), id);
+      return { taken };
+    },
+    onError: (_error, _id, context) => {
+      if (context === undefined) return;
+      restore(client, context.taken);
+    },
     onSuccess: () => {
-      invalidate(client, [starsOfKindKey(kind), ...northStars]);
+      invalidate(client, [starsOfKindKey(kind), ...northStars, ...blackholes]);
     },
   });
 

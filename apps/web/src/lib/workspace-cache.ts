@@ -4,6 +4,7 @@ import type { BlueshiftStar } from "@proj/shared";
 export interface BlueshiftStarPatch {
   readonly completed?: boolean;
   readonly northStar?: boolean;
+  readonly blackhole?: boolean;
 }
 
 export interface ErrorView {
@@ -31,6 +32,7 @@ export const shiftStarsKey = (kind: "blueshift" | "redshift", shiftId: string): 
   shiftId,
 ];
 export const northStarsKey = (): QueryKey => ["north-stars"];
+export const blackholesKey = (): QueryKey => ["blackholes"];
 export const settingsKey = (): QueryKey => ["settings"];
 
 export function invalidate(client: QueryClient, keys: readonly QueryKey[]): void {
@@ -51,25 +53,24 @@ export function patchListItems<T extends { readonly id: string }>(
 export type StarCachePatch = {
   readonly completed?: boolean;
   readonly northStar?: boolean;
+  readonly blackhole?: boolean;
 };
 
-export function applyStarPatch(
+function maintainSectionList(
   client: QueryClient,
   key: QueryKey,
+  sectionKey: QueryKey,
   id: string,
-  patch: BlueshiftStarPatch,
-  now: number,
+  member: boolean,
+  donePatch: {
+    readonly completedAt?: number | null;
+    readonly northStar?: boolean;
+    readonly blackhole?: boolean;
+  },
 ): void {
-  const donePatch: { completedAt?: number | null; northStar?: boolean } = {};
-  if (patch.completed === true) donePatch.completedAt = now;
-  if (patch.completed === false) donePatch.completedAt = null;
-  if ("northStar" in patch && patch.northStar !== undefined) donePatch.northStar = patch.northStar;
-  patchListItems<BlueshiftStar>(client, key, id, donePatch);
-  const northStar = "northStar" in patch ? patch.northStar : undefined;
-  if (northStar === undefined) return;
-  client.setQueryData<BlueshiftStar[]>(northStarsKey(), (current) => {
+  client.setQueryData<BlueshiftStar[]>(sectionKey, (current) => {
     if (current === undefined) return current;
-    if (!northStar) return current.filter((item) => item.id !== id);
+    if (!member) return current.filter((item) => item.id !== id);
     const star = client
       .getQueriesData<BlueshiftStar[]>({ queryKey: key })
       .map(([, data]) => data ?? [])
@@ -78,6 +79,37 @@ export function applyStarPatch(
     if (star === undefined) return current;
     return [...current.filter((item) => item.id !== id), { ...star, ...donePatch }];
   });
+}
+
+export function applyStarPatch(
+  client: QueryClient,
+  key: QueryKey,
+  id: string,
+  patch: BlueshiftStarPatch,
+  now: number,
+): void {
+  const donePatch: { completedAt?: number | null; northStar?: boolean; blackhole?: boolean } = {};
+  if (patch.completed === true) donePatch.completedAt = now;
+  if (patch.completed === false) donePatch.completedAt = null;
+  if ("northStar" in patch && patch.northStar !== undefined) donePatch.northStar = patch.northStar;
+  if ("blackhole" in patch && patch.blackhole !== undefined) donePatch.blackhole = patch.blackhole;
+  patchListItems<BlueshiftStar>(client, key, id, donePatch);
+  const northStar = "northStar" in patch ? patch.northStar : undefined;
+  if (northStar !== undefined) {
+    maintainSectionList(client, key, northStarsKey(), id, northStar, donePatch);
+  }
+  const collapse = "blackhole" in patch && patch.blackhole !== undefined ? patch.blackhole : undefined;
+  if (collapse !== undefined || patch.completed === true) {
+    const member = collapse === true && patch.completed !== true;
+    maintainSectionList(client, key, blackholesKey(), id, member, donePatch);
+  }
+}
+
+export function removeStarEverywhere(client: QueryClient, key: QueryKey, id: string): void {
+  client.setQueriesData<BlueshiftStar[]>({ queryKey: key }, (current) => current?.filter((item) => item.id !== id));
+  for (const sectionKey of [northStarsKey(), blackholesKey()]) {
+    client.setQueryData<BlueshiftStar[]>(sectionKey, (current) => current?.filter((item) => item.id !== id));
+  }
 }
 
 export type Snapshot = ReadonlyArray<readonly [QueryKey, unknown]>;

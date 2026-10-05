@@ -152,6 +152,12 @@ export async function listNorthStars(): Promise<BlueshiftStar[]> {
   return rows;
 }
 
+export async function listBlackholes(): Promise<BlueshiftStar[]> {
+  const response = await client.api.blackholes.$get();
+  const rows = await unwrap(response);
+  return rows;
+}
+
 export async function getSettings(): Promise<Settings> {
   const response = await client.api.settings.$get();
   const settings = await unwrap(response);

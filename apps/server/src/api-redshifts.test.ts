@@ -200,6 +200,20 @@ describe("redshift star patching", () => {
     expect(northStar.status).toBe(400);
   });
 
+  test("keeps the blackhole designation out of Redshift Star routes and rows", async () => {
+    const redshift = await createRedshift("Practice stays light");
+    const star = await createStar(redshift.id, "Burn daily");
+    expect("blackhole" in star).toBe(false);
+    const collapser = await request(`/api/redshifts/stars/${star.id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ blackhole: true }),
+      headers: jsonHeaders,
+    });
+    expect(collapser.status).toBe(400);
+    const rows = await json(await request(`/api/redshifts/${redshift.id}/stars`), redshiftStarSchema.array());
+    expect(rows[0]).not.toHaveProperty("blackhole");
+  });
+
   test("returns kind-prefixed errors for unknown Star member routes", async () => {
     const patch = await request(`/api/redshifts/stars/${crypto.randomUUID()}`, {
       method: "PATCH",

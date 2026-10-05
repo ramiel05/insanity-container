@@ -10,6 +10,7 @@ export function BlueshiftPanel(): React.JSX.Element {
   const blueshift = workspace.selectedShift("blueshift");
   if (!blueshift) throw new Error("BlueshiftPanel rendered without a selected Blueshift");
   const stars = workspace.starsOf("blueshift");
+  const blackholeExists = workspace.blackholes.length > 0;
   const starError = workspace.errors.latestStar("blueshift");
   const starCreateError = workspace.errors.createStar("blueshift");
   const createError = starCreateError !== null && starCreateError !== dismissedCreateError ? starCreateError : null;
@@ -71,6 +72,10 @@ export function BlueshiftPanel(): React.JSX.Element {
             onNorthStar={(northStar: boolean) => {
               workspace.ops.updateStar("blueshift", star.id, { northStar });
             }}
+            onCollapse={() => {
+              workspace.ops.updateStar("blueshift", star.id, { blackhole: true });
+            }}
+            collapseBlocked={blackholeExists}
             onDelete={() => {
               workspace.confirmDelete(`Delete the Star "${star.title}"?`, () => {
                 workspace.ops.deleteStar("blueshift", star.id);

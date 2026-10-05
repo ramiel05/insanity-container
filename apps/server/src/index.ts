@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import { createClerkAuthenticator, rejectAll, type Authenticator } from "./auth";
 import { db } from "#db";
 import {
+  createBlackholeRoutes,
   createBlueshiftNestedStarRoutes,
   createBlueshiftRoutes,
   createBlueshiftStarRoutes,
@@ -29,6 +30,7 @@ export function createApp(database = db, authenticator: Authenticator = rejectAl
     .route("/api/redshifts", createRedshiftNestedStarRoutes(database))
     .route("/api/redshifts/stars", createRedshiftStarRoutes(database))
     .route("/api/north-stars", createNorthStarRoutes(database))
+    .route("/api/blackholes", createBlackholeRoutes(database))
     .route("/api/settings", createSettingsRoutes(database))
     .all("/api/*", (c) => c.json({ error: "Not found" }, 404));
 }

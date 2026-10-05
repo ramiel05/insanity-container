@@ -16,6 +16,7 @@ export const blueshiftStars = sqliteTable("blueshift_stars", {
   title: text("title").notNull(),
   completedAt: integer("completed_at", { mode: "number" }),
   northStar: integer("north_star", { mode: "boolean" }).notNull().default(false),
+  blackhole: integer("blackhole", { mode: "boolean" }).notNull().default(false),
   createdAt: integer("created_at", { mode: "number" }).notNull(),
 });
 

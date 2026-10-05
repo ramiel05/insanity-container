@@ -31,6 +31,10 @@ export function NorthStarsSection(): React.JSX.Element {
             onToggle={(completed: boolean) => {
               workspace.ops.updateStar("blueshift", star.id, { completed });
             }}
+            onCollapse={() => {
+              workspace.ops.updateStar("blueshift", star.id, { blackhole: true });
+            }}
+            collapseBlocked={workspace.blackholes.length > 0}
             onDelete={() => {
               workspace.confirmDelete(`Delete ${star.title}?`, () => {
                 workspace.ops.deleteStar("blueshift", star.id);

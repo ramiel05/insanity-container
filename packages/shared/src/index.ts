@@ -31,13 +31,14 @@ export const blueshiftStarSchema = z.object({
   title: z.string(),
   completedAt: z.number().nullable(),
   northStar: z.boolean(),
+  blackhole: z.boolean(),
   createdAt: z.number(),
 });
 
 export const createBlueshiftStarSchema = z.object({ title: z.string().trim().min(1, "Title is required") });
 export const updateBlueshiftStarSchema = z
-  .object({ completed: z.boolean().optional(), northStar: z.boolean().optional() })
-  .refine((value) => "completed" in value || "northStar" in value);
+  .object({ completed: z.boolean().optional(), northStar: z.boolean().optional(), blackhole: z.boolean().optional() })
+  .refine((value) => "completed" in value || "northStar" in value || "blackhole" in value);
 
 export const redshiftSchema = z.object({
   id: z.string(),

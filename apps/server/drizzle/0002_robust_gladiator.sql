@@ -1,0 +1,1 @@
+ALTER TABLE `blueshift_stars` ADD `blackhole` integer DEFAULT false NOT NULL;

@@ -5,6 +5,7 @@ import {
   invalidate,
   latestError,
   patchListItems,
+  removeStarEverywhere,
   restore,
   shiftStarsKey,
   snapshot,
@@ -27,6 +28,8 @@ const redshiftListKey = ["lists", "redshift"];
 const blueshiftStarsKey = ["stars", "blueshift", "b1"];
 const redshiftStarsKey = ["stars", "redshift", "r1"];
 const northStarsKey = ["north-stars"];
+const blackholesKey = ["blackholes"];
+const starsPrefixKey = ["stars"];
 
 function blueshift(id: string): {
   id: string;
@@ -40,8 +43,14 @@ function blueshift(id: string): {
 function redshift(id: string): { id: string; name: string; goal: string | null; magnitude: number; createdAt: number } {
   return { id, name: `R ${id}`, goal: null, magnitude: 4, createdAt: 1 };
 }
-function blueshiftStar(id: string): { id: string; title: string; completedAt: number | null; northStar: boolean } {
-  return { id, title: `S ${id}`, completedAt: null, northStar: false };
+function blueshiftStar(id: string): {
+  id: string;
+  title: string;
+  completedAt: number | null;
+  northStar: boolean;
+  blackhole: boolean;
+} {
+  return { id, title: `S ${id}`, completedAt: null, northStar: false, blackhole: false };
 }
 function redshiftStar(id: string): { id: string; title: string; completedAt: number | null } {
   return { id, title: `T ${id}`, completedAt: null };
@@ -127,6 +136,71 @@ describe("applyStarPatch (northStar)", () => {
     feed(c, blueshiftStarsKey, [blueshiftStar("s1")]);
     applyStarPatch(c, blueshiftStarsKey, "s1", { northStar: true }, NOW);
     expect(c.getQueryData<unknown[]>(northStarsKey)).toBeUndefined();
+  });
+});
+
+describe("applyStarPatch (blackhole)", () => {
+  test("adds the collapsing Star as the single blackhole entry", () => {
+    const c = client();
+    feed(c, blueshiftStarsKey, [blueshiftStar("s1")]);
+    feed(c, blackholesKey, []);
+    applyStarPatch(c, blueshiftStarsKey, "s1", { blackhole: true }, NOW);
+    const holes = c.getQueryData<{ id: string; blackhole: boolean }[]>(blackholesKey);
+    expect(holes?.map((item) => item.id)).toEqual(["s1"]);
+    expect(holes?.[0]?.blackhole).toBe(true);
+  });
+
+  test("drops the Star from the blackholes cache on release", () => {
+    const c = client();
+    feed(c, blueshiftStarsKey, [{ ...blueshiftStar("s1"), blackhole: true }]);
+    feed(c, blackholesKey, [{ ...blueshiftStar("s1"), blackhole: true }]);
+    applyStarPatch(c, blueshiftStarsKey, "s1", { blackhole: false }, NOW);
+    expect(c.getQueryData<{ id: string }[]>(blackholesKey)).toEqual([]);
+  });
+
+  test("completion clears the blackhole cache without touching the north-stars cache", () => {
+    const c = client();
+    feed(c, blueshiftStarsKey, [{ ...blueshiftStar("s1"), blackhole: true }]);
+    feed(c, blackholesKey, [{ ...blueshiftStar("s1"), blackhole: true }]);
+    applyStarPatch(c, blueshiftStarsKey, "s1", { completed: true }, NOW);
+    expect(c.getQueryData<{ id: string }[]>(blackholesKey)).toEqual([]);
+  });
+
+  test("completion wins when collapse and tick ride one patch", () => {
+    const c = client();
+    feed(c, blueshiftStarsKey, [blueshiftStar("s1")]);
+    feed(c, blackholesKey, [{ ...blueshiftStar("s0"), blackhole: true }]);
+    applyStarPatch(c, blueshiftStarsKey, "s1", { completed: true, blackhole: true }, NOW);
+    expect(c.getQueryData<unknown[]>(blackholesKey)).toEqual([{ ...blueshiftStar("s0"), blackhole: true }]);
+  });
+
+  test("leaves the blackholes cache alone when it is not loaded", () => {
+    const c = client();
+    feed(c, blueshiftStarsKey, [blueshiftStar("s1")]);
+    applyStarPatch(c, blueshiftStarsKey, "s1", { blackhole: true }, NOW);
+    expect(c.getQueryData<unknown[]>(blackholesKey)).toBeUndefined();
+  });
+});
+
+describe("removeStarEverywhere", () => {
+  test("drops the Star from shift lists, North Stars, and blackholes", () => {
+    const c = client();
+    feed(c, blueshiftStarsKey, [blueshiftStar("s1"), blueshiftStar("s2")]);
+    feed(c, northStarsKey, [{ ...blueshiftStar("s1"), northStar: true }]);
+    feed(c, blackholesKey, [{ ...blueshiftStar("s1"), blackhole: true }]);
+    removeStarEverywhere(c, starsPrefixKey, "s1");
+    expect(c.getQueryData<{ id: string }[]>(blueshiftStarsKey)?.map((item) => item.id)).toEqual(["s2"]);
+    expect(c.getQueryData<unknown[]>(northStarsKey)).toEqual([]);
+    expect(c.getQueryData<unknown[]>(blackholesKey)).toEqual([]);
+  });
+
+  test("leaves redshift star lists and unloaded keys alone", () => {
+    const c = client();
+    feed(c, redshiftStarsKey, [redshiftStar("t1")]);
+    removeStarEverywhere(c, starsPrefixKey, "t1");
+    expect(c.getQueryData<unknown[]>(redshiftStarsKey)).toEqual([]);
+    expect(c.getQueryData<unknown[]>(northStarsKey)).toBeUndefined();
+    expect(c.getQueryData<unknown[]>(blackholesKey)).toBeUndefined();
   });
 });
 

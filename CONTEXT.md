@@ -24,6 +24,10 @@ _Avoid_: Priority, tier, rank
 A single, actionable piece of work belonging to one Blueshift or Redshift. In a Redshift, a Star is Fixed by default; a Star created without the Fixed designation stays done once completed.
 _Avoid_: Task, todo, to-do, item
 
+**Blackhole**:
+A Star of a Blueshift designated as all-consuming current work: the Star becomes a Blackhole by collapsing, and at most one may exist at a time. While a Blackhole exists, the rest of the workspace dims until it is completed, deleted, or evaporated back into its Blueshift.
+_Avoid_: Focus mode, locked task, priority, blocking task
+
 **North Star**:
 A Star of a Blueshift designated as current focus. North Star is a persistent designation: there is no limit on how many North Stars may exist at once.
 _Avoid_: Priority, featured task, daily task

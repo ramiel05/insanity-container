@@ -2,7 +2,7 @@ import { createContext, useContext, useState } from "react";
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import * as api from "#lib/api";
 import { effectiveTimeZone } from "#lib/day";
-import { latestError, listsKey, northStarsKey, settingsKey, starsKey } from "#lib/workspace-cache";
+import { blackholesKey, latestError, listsKey, northStarsKey, settingsKey, starsKey } from "#lib/workspace-cache";
 import {
   useKindMutations,
   type CreateStarInput,
@@ -61,6 +61,7 @@ export interface Workspace {
     (kind: Kind): (Blueshift | Redshift) | undefined;
   };
   readonly northStars: readonly BlueshiftStar[];
+  readonly blackholes: readonly BlueshiftStar[];
   readonly settings?: Settings;
   readonly timeZone: string;
   readonly selected: Selected;
@@ -151,6 +152,7 @@ export function useWorkspaceState(): Workspace {
     handlers,
   );
   const northStarsQuery = useQuery({ queryKey: northStarsKey(), queryFn: api.listNorthStars });
+  const blackholesQuery = useQuery({ queryKey: blackholesKey(), queryFn: api.listBlackholes });
   const settingsQuery = useQuery({ queryKey: settingsKey(), queryFn: api.getSettings });
   const forState = (kind: Kind): KindState<Kind> => stateFor(kind, blueshiftState, redshiftState);
 
@@ -231,6 +233,7 @@ export function useWorkspaceState(): Workspace {
     blueshiftState.list.error ??
     redshiftState.list.error ??
     northStarsQuery.error ??
+    blackholesQuery.error ??
     blueshiftState.stars.error ??
     redshiftState.stars.error ??
     settingsQuery.error;
@@ -240,6 +243,7 @@ export function useWorkspaceState(): Workspace {
     starsOf: starsFor,
     selectedShift: selectedShiftFor,
     northStars: northStarsQuery.data ?? [],
+    blackholes: blackholesQuery.data ?? [],
     settings: settingsQuery.data,
     timeZone: effectiveTimeZone(),
     selected,
@@ -253,7 +257,11 @@ export function useWorkspaceState(): Workspace {
     confirmDelete,
     queryError,
     northStarsError: northStarsQuery.error,
-    pending: blueshiftState.list.isPending || redshiftState.list.isPending || northStarsQuery.isPending,
+    pending:
+      blueshiftState.list.isPending ||
+      redshiftState.list.isPending ||
+      northStarsQuery.isPending ||
+      blackholesQuery.isPending,
     ops,
     errors,
   };

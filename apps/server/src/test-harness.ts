@@ -19,6 +19,7 @@ export const blueshiftStarSchema = z.object({
   title: z.string(),
   completedAt: z.number().nullable(),
   northStar: z.boolean(),
+  blackhole: z.boolean(),
   createdAt: z.number(),
 });
 

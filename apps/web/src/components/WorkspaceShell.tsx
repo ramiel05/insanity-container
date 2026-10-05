@@ -1,5 +1,6 @@
 import type React from "react";
 import { AppModals } from "./AppModals";
+import { BlackholeSection } from "./BlackholeSection";
 import { Header } from "./Header";
 import { Legend } from "./Legend";
 import { NorthStarsSection } from "./NorthStarsSection";
@@ -14,6 +15,7 @@ export function WorkspaceShell(): React.JSX.Element {
         <Header />
         <QueryStateBanner />
         <Legend />
+        <BlackholeSection />
         <NorthStarsSection />
         <div className="grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)_16rem]">
           <ShiftColumn kind="redshift" className="order-1 lg:col-start-1 lg:order-none" />

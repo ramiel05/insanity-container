@@ -81,6 +81,7 @@ export function createBlueshiftNestedStarRoutes(database = db) {
         title: input.title,
         completedAt: null,
         northStar: false,
+        blackhole: false,
         createdAt: Date.now(),
       };
       await database.insert(blueshiftStars).values(star);
@@ -100,6 +101,18 @@ export function createNorthStarRoutes(database = db) {
   );
 }
 
+export function createBlackholeRoutes(database = db) {
+  return new Hono().get("/", async (c) =>
+    c.json(
+      await database
+        .select()
+        .from(blueshiftStars)
+        .where(eq(blueshiftStars.blackhole, true))
+        .orderBy(blueshiftStars.createdAt, sql`rowid`),
+    ),
+  );
+}
+
 export function createBlueshiftStarRoutes(database = db) {
   return new Hono()
     .patch("/:id", zValidator("json", updateBlueshiftStarSchema), async (c) => {
@@ -107,6 +120,17 @@ export function createBlueshiftStarRoutes(database = db) {
       const set: Partial<typeof blueshiftStars.$inferInsert> = {};
       if ("completed" in input) set.completedAt = input.completed === true ? Date.now() : null;
       if ("northStar" in input) set.northStar = input.northStar === true;
+      if ("blackhole" in input) set.blackhole = input.blackhole === true;
+      if (input.blackhole === true) {
+        const [existing] = await database
+          .select({ id: blueshiftStars.id })
+          .from(blueshiftStars)
+          .where(eq(blueshiftStars.blackhole, true));
+        if (existing && existing.id !== c.req.param("id")) {
+          return c.json({ error: "Blueshift star cannot collapse: a Blackhole already exists" }, 409);
+        }
+      }
+      if (input.completed === true) set.blackhole = false;
       const [star] = await database
         .update(blueshiftStars)
         .set(set)
