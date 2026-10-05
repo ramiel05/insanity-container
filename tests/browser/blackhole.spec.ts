@@ -28,19 +28,11 @@ function legendLocator(page: Page): Locator {
 }
 
 async function clearLeftoverBlackhole(page: Page): Promise<void> {
-  const blackholesLoaded = page.waitForResponse((response) => {
-    const url = new URL(response.url());
-    return url.pathname === "/api/blackholes" && response.request().method() === "GET";
-  });
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "North Stars" })).toBeVisible();
-  await blackholesLoaded;
+  await expect(page.getByRole("status")).toBeHidden();
   const region = page.getByRole("region", { name: "Blackhole" });
-  const leftover = await region.waitFor({ state: "visible", timeout: 500 }).then(
-    () => true,
-    () => false,
-  );
-  if (!leftover) return;
+  if ((await region.count()) === 0) return;
   await region
     .getByLabel(/Complete /u)
     .first()
