@@ -2,8 +2,6 @@ import type React from "react";
 import { TrashIcon } from "./icons";
 import type { BlueshiftStar } from "@proj/shared";
 
-const COLLAPSE_BLOCKED_TOOLTIP = "A Blackhole exists: complete, delete, or evaporate it before collapsing another Star";
-
 export function StarRow({
   star,
   onToggle,
@@ -81,7 +79,6 @@ export function StarRow({
         <button
           type="button"
           aria-label={`Collapse ${star.title} into a Blackhole`}
-          {...(collapseBlocked ? { title: COLLAPSE_BLOCKED_TOOLTIP } : {})}
           disabled={collapseBlocked}
           onClick={() => {
             onCollapse();

@@ -2,7 +2,6 @@ import type { Locator, Page } from "@playwright/test";
 import { expect, test } from "./auth";
 
 const DIMMED = "[data-dimmed]";
-const BLOCKED_TOOLTIP = "A Blackhole exists: complete, delete, or evaporate it before collapsing another Star";
 
 async function createBlueshiftWithStars(page: Page, name: string, titles: readonly string[]): Promise<void> {
   await page.getByRole("button", { name: "+ New Blueshift" }).click();
@@ -111,7 +110,6 @@ test("ticking the Blackhole complete clears the section and frees the collapse a
   await expect(region).toBeHidden();
   const freed = page.getByRole("button", { name: "Collapse Tidy the deck into a Blackhole" });
   await expect(freed).toBeEnabled();
-  await expect(freed).not.toHaveAttribute("title", BLOCKED_TOOLTIP);
 });
 
 test("deleting the Blackhole row lifts the section", async ({ page }) => {
@@ -125,19 +123,6 @@ test("deleting the Blackhole row lifts the section", async ({ page }) => {
   await region.getByRole("button", { name: "Delete Swallow the sky" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Delete" }).click();
   await expect(region).toBeHidden();
-});
-
-test("the Collapse affordance is disabled with an explanatory tooltip while a Blackhole exists", async ({ page }) => {
-  await setUp(page);
-  const name = `Blocked collapse ${crypto.randomUUID().slice(0, 8)}`;
-  await createBlueshiftWithStars(page, name, ["Swallow the sky", "Tidy the deck"]);
-  await page.getByRole("button", { name: "Collapse Swallow the sky into a Blackhole" }).click();
-  const region = page.getByRole("region", { name: "Blackhole" });
-  await expect(region).toBeVisible();
-
-  const blocked = page.getByRole("button", { name: "Collapse Tidy the deck into a Blackhole" });
-  await expect(blocked).toBeDisabled();
-  await expect(blocked).toHaveAttribute("title", BLOCKED_TOOLTIP);
 });
 
 test("collapse applies before the server answers", async ({ page }) => {
