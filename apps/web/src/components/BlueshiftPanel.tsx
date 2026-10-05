@@ -1,6 +1,7 @@
 import type React from "react";
 import { useState } from "react";
 import { useWorkspace } from "#lib/workspace";
+import { Dimmed } from "./Dimmed";
 import { StarRow } from "./StarRow";
 
 export function BlueshiftPanel(): React.JSX.Element {
@@ -31,59 +32,61 @@ export function BlueshiftPanel(): React.JSX.Element {
           {error}
         </p>
       )}
-      <form
-        className="mb-4 flex items-start gap-3"
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (!valid) return;
-          workspace.ops.createStar("blueshift", blueshift.id, { title: title.trim() });
-          setTitle("");
-        }}
-      >
-        <input
-          aria-label="New Star title"
-          placeholder="New Star title"
-          value={title}
-          onChange={(event) => {
-            setTitle(event.target.value);
-            setDismissedCreateError(starCreateError ?? null);
-          }}
-          className="min-w-0 flex-1 rounded-xl border border-line bg-surface p-3"
-        />
-        <button
-          type="submit"
-          disabled={!valid}
-          onMouseDown={(event) => {
+      <Dimmed>
+        <form
+          className="mb-4 flex items-start gap-3"
+          onSubmit={(event) => {
             event.preventDefault();
+            if (!valid) return;
+            workspace.ops.createStar("blueshift", blueshift.id, { title: title.trim() });
+            setTitle("");
           }}
-          className="rounded-xl bg-ink px-4 py-3 text-sm font-bold text-paper hover:bg-ink/90 disabled:opacity-50"
         >
-          {"Add Star"}
-        </button>
-      </form>
-      <div className="space-y-3">
-        {stars.map((star) => (
-          <StarRow
-            key={star.id}
-            star={star}
-            onToggle={(completed: boolean) => {
-              workspace.ops.updateStar("blueshift", star.id, { completed });
+          <input
+            aria-label="New Star title"
+            placeholder="New Star title"
+            value={title}
+            onChange={(event) => {
+              setTitle(event.target.value);
+              setDismissedCreateError(starCreateError ?? null);
             }}
-            onNorthStar={(northStar: boolean) => {
-              workspace.ops.updateStar("blueshift", star.id, { northStar });
-            }}
-            onCollapse={() => {
-              workspace.ops.updateStar("blueshift", star.id, { blackhole: true });
-            }}
-            collapseBlocked={blackholeExists}
-            onDelete={() => {
-              workspace.confirmDelete(`Delete the Star "${star.title}"?`, () => {
-                workspace.ops.deleteStar("blueshift", star.id);
-              });
-            }}
+            className="min-w-0 flex-1 rounded-xl border border-line bg-surface p-3"
           />
-        ))}
-      </div>
+          <button
+            type="submit"
+            disabled={!valid}
+            onMouseDown={(event) => {
+              event.preventDefault();
+            }}
+            className="rounded-xl bg-ink px-4 py-3 text-sm font-bold text-paper hover:bg-ink/90 disabled:opacity-50"
+          >
+            {"Add Star"}
+          </button>
+        </form>
+        <div className="space-y-3">
+          {stars.map((star) => (
+            <StarRow
+              key={star.id}
+              star={star}
+              onToggle={(completed: boolean) => {
+                workspace.ops.updateStar("blueshift", star.id, { completed });
+              }}
+              onNorthStar={(northStar: boolean) => {
+                workspace.ops.updateStar("blueshift", star.id, { northStar });
+              }}
+              onCollapse={() => {
+                workspace.ops.updateStar("blueshift", star.id, { blackhole: true });
+              }}
+              collapseBlocked={blackholeExists}
+              onDelete={() => {
+                workspace.confirmDelete(`Delete the Star "${star.title}"?`, () => {
+                  workspace.ops.deleteStar("blueshift", star.id);
+                });
+              }}
+            />
+          ))}
+        </div>
+      </Dimmed>
     </>
   );
 }

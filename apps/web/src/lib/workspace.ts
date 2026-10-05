@@ -62,6 +62,7 @@ export interface Workspace {
   };
   readonly northStars: readonly BlueshiftStar[];
   readonly blackholes: readonly BlueshiftStar[];
+  readonly dimmed: boolean;
   readonly settings?: Settings;
   readonly timeZone: string;
   readonly selected: Selected;
@@ -153,6 +154,7 @@ export function useWorkspaceState(): Workspace {
   );
   const northStarsQuery = useQuery({ queryKey: northStarsKey(), queryFn: api.listNorthStars });
   const blackholesQuery = useQuery({ queryKey: blackholesKey(), queryFn: api.listBlackholes });
+  const blackholes = blackholesQuery.data ?? [];
   const settingsQuery = useQuery({ queryKey: settingsKey(), queryFn: api.getSettings });
   const forState = (kind: Kind): KindState<Kind> => stateFor(kind, blueshiftState, redshiftState);
 
@@ -243,7 +245,8 @@ export function useWorkspaceState(): Workspace {
     starsOf: starsFor,
     selectedShift: selectedShiftFor,
     northStars: northStarsQuery.data ?? [],
-    blackholes: blackholesQuery.data ?? [],
+    blackholes,
+    dimmed: blackholes.length > 0,
     settings: settingsQuery.data,
     timeZone: effectiveTimeZone(),
     selected,

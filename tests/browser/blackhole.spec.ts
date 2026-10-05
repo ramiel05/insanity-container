@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 import { expect, test } from "./auth";
 
 const BLOCKED_TOOLTIP = "A Blackhole exists: complete, delete, or evaporate it before collapsing another Star";
@@ -25,7 +25,15 @@ async function clearLeftoverBlackhole(page: Page): Promise<void> {
   await expect(region).toBeHidden();
 }
 
-async function setUp(page: Page): Promise<void> {
+async function attemptInertClick(control: Locator): Promise<void> {
+  await expect(control.click({ timeout: 500 })).rejects.toThrow();
+}
+
+function legendLocator(page: Page): Locator {
+  return page.getByRole("region", { name: "Legend" });
+}
+
+async function bootAndWaitForBlackholes(page: Page): Promise<void> {
   const blackholesLoaded = page.waitForResponse((response) => {
     const url = new URL(response.url());
     return url.pathname === "/api/blackholes" && response.request().method() === "GET";
@@ -33,8 +41,17 @@ async function setUp(page: Page): Promise<void> {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "North Stars" })).toBeVisible();
   await blackholesLoaded;
+}
+
+async function setUp(page: Page): Promise<void> {
+  await bootAndWaitForBlackholes(page);
   await clearLeftoverBlackhole(page);
 }
+
+test.afterEach(async ({ page }) => {
+  await bootAndWaitForBlackholes(page);
+  await clearLeftoverBlackhole(page);
+});
 
 test("hides the Blackhole section when no Blackhole exists", async ({ page }) => {
   await setUp(page);
@@ -134,4 +151,102 @@ test("collapse applies before the server answers", async ({ page }) => {
   });
   await page.getByRole("button", { name: "Collapse Swallow the sky into a Blackhole" }).click();
   await expect(page.getByRole("region", { name: "Blackhole" })).toBeVisible({ timeout: 500 });
+});
+
+test("dims and freezes the workspace while a Blackhole exists, and lifts on completion", async ({ page }) => {
+  await setUp(page);
+  const name = `Frozen sky ${crypto.randomUUID().slice(0, 8)}`;
+  await createBlueshiftWithStars(page, name, ["Swallow the sky", "Tidy the deck"]);
+  await page.getByRole("button", { name: "Collapse Swallow the sky into a Blackhole" }).click();
+  const region = page.getByRole("region", { name: "Blackhole" });
+  await expect(region).toBeVisible();
+
+  const northStars = page.getByRole("region", { name: "North Stars" });
+  const blueshifts = page.getByLabel("Blueshifts", { exact: true });
+  const redshifts = page.getByLabel("Redshifts", { exact: true });
+  const centre = page.locator("[data-dimmed]").filter({ has: page.getByRole("button", { name: "Add Star" }) });
+  const dimmedAreas = [
+    northStars.locator("[data-dimmed]"),
+    blueshifts.locator("[data-dimmed]"),
+    redshifts.locator("[data-dimmed]"),
+    centre,
+  ];
+
+  await expect(page.locator("[data-dimmed]")).toHaveCount(4, { timeout: 500 });
+  for (const area of dimmedAreas) {
+    await expect(area).toHaveCSS("filter", "blur(4px)");
+    await expect(area).toHaveCSS("pointer-events", "none");
+  }
+
+  await attemptInertClick(blueshifts.getByLabel(`Delete ${name}`));
+  await attemptInertClick(centre.getByLabel("Complete Tidy the deck"));
+  await attemptInertClick(centre.getByLabel("Delete Tidy the deck"));
+  await attemptInertClick(centre.getByLabel("New Star title"));
+  await expect(centre.getByLabel("Complete Tidy the deck")).not.toBeChecked();
+
+  await expect(legendLocator(page)).toBeVisible();
+  await expect(legendLocator(page).locator("[data-dimmed]")).toHaveCount(0);
+  await page.getByRole("button", { name: "+ New Blueshift" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Cancel" }).click();
+  await expect(region.getByLabel("Complete Swallow the sky")).toBeEnabled();
+
+  await region.getByLabel("Complete Swallow the sky").click();
+  await expect(region).toBeHidden();
+  await expect(page.locator("[data-dimmed]")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Collapse Tidy the deck into a Blackhole" })).toBeEnabled();
+});
+
+test("the dim lifts when the Blackhole is deleted", async ({ page }) => {
+  await setUp(page);
+  const name = `Released sky ${crypto.randomUUID().slice(0, 8)}`;
+  await createBlueshiftWithStars(page, name, ["Swallow the sky", "Tidy the deck"]);
+  await page.getByRole("button", { name: "Collapse Swallow the sky into a Blackhole" }).click();
+  const region = page.getByRole("region", { name: "Blackhole" });
+  await expect(page.locator("[data-dimmed]")).toHaveCount(4);
+
+  await region.getByRole("button", { name: "Delete Swallow the sky" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Delete" }).click();
+  await expect(region).toBeHidden();
+  await expect(page.locator("[data-dimmed]")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Collapse Tidy the deck into a Blackhole" })).toBeEnabled();
+});
+
+test("copies of the Blackhole Star outside the Blackhole section blur with everything else", async ({ page }) => {
+  await setUp(page);
+  const name = `Twin copy ${crypto.randomUUID().slice(0, 8)}`;
+  const hole = `Swallow the sky ${crypto.randomUUID().slice(0, 8)}`;
+  const other = `Tidy the deck ${crypto.randomUUID().slice(0, 8)}`;
+  await createBlueshiftWithStars(page, name, [hole, other]);
+  await page.getByLabel(`Make ${hole} a North Star`).click();
+  await page.getByRole("button", { name: `Collapse ${hole} into a Blackhole` }).click();
+  const region = page.getByRole("region", { name: "Blackhole" });
+  await expect(region).toBeVisible();
+
+  const northStars = page.getByRole("region", { name: "North Stars" });
+  await expect(northStars.getByText(hole)).toBeVisible();
+  const centre = page.locator("[data-dimmed]").filter({ has: page.getByRole("button", { name: "Add Star" }) });
+
+  await attemptInertClick(northStars.getByLabel(`Complete ${hole}`));
+  await attemptInertClick(northStars.getByLabel(`Delete ${hole}`));
+  await attemptInertClick(centre.getByLabel(`Complete ${hole}`));
+
+  await region.getByLabel(`Complete ${hole}`).click();
+  await expect(region).toBeHidden();
+  await expect(page.locator("[data-dimmed]")).toHaveCount(0);
+});
+
+test("the centre panel blurs like everything else when the Blackhole is selected", async ({ page }) => {
+  await setUp(page);
+  const name = `Selected hole ${crypto.randomUUID().slice(0, 8)}`;
+  await createBlueshiftWithStars(page, name, ["Swallow the sky", "Tidy the deck"]);
+  await page.getByRole("button", { name: "Collapse Swallow the sky into a Blackhole" }).click();
+  const region = page.getByRole("region", { name: "Blackhole" });
+  await expect(region).toBeVisible();
+  await region.getByText("Swallow the sky").click();
+
+  const centre = page.locator("[data-dimmed]").filter({ has: page.getByRole("button", { name: "Add Star" }) });
+  await expect(centre.getByText("Swallow the sky")).toBeVisible();
+  await expect(centre).toHaveCSS("filter", "blur(4px)");
+  await attemptInertClick(centre.getByLabel("Complete Swallow the sky"));
+  await attemptInertClick(centre.getByLabel("Complete Tidy the deck"));
 });
