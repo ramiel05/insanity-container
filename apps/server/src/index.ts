@@ -3,6 +3,7 @@ import { cors } from "hono/cors";
 import { Hono } from "hono";
 import { createClerkAuthenticator, rejectAll, type Authenticator } from "./auth";
 import { db } from "#db";
+import { findUnrecoverableDbError } from "#db/unrecoverable";
 import {
   createBlackholeRoutes,
   createBlueshiftNestedStarRoutes,
@@ -17,6 +18,21 @@ export function createApp(database = db, authenticator: Authenticator = rejectAl
   const app = new Hono();
   if (corsEnabled) app.use("/api/*", cors());
   return app
+    .onError((error, c) => {
+      if (findUnrecoverableDbError(error)) {
+        console.error(
+          "unrecoverable database session (embedded replica stream lost); exiting so Fly restarts and the replica re-syncs",
+        );
+        console.error(error);
+        process.exit(1);
+      }
+      if ("getResponse" in error) {
+        const response = (error as { readonly getResponse: () => Response }).getResponse();
+        return c.newResponse(response.body, response);
+      }
+      console.error(error);
+      return c.text("Internal Server Error", 500);
+    })
     .use("/api/*", async (c, next) => {
       const user = await authenticator(c.req.raw);
       if (user === null) return c.json({ error: "Unauthorized" }, 401);

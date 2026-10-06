@@ -133,6 +133,12 @@
       }
     },
     {
+      "files": ["apps/server/src/index.ts"],
+      "rules": {
+        "no-console": "off"
+      }
+    },
+    {
       "files": ["tests/browser/auth.ts", "tests/browser/*.spec.ts"],
       "rules": {
         "react-hooks/rules-of-hooks": "off",
