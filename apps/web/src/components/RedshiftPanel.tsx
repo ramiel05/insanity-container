@@ -84,7 +84,7 @@ export function RedshiftPanel(): React.JSX.Element {
               workspace.ops.updateStar("redshift", star.id, { completed });
             }}
             onDelete={() => {
-              workspace.confirmDelete(`Delete the Star "${star.title}"?`, () => {
+              workspace.confirmAction(`Delete the Star "${star.title}"?`, () => {
                 workspace.ops.deleteStar("redshift", star.id);
               });
             }}

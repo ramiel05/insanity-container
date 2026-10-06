@@ -7,4 +7,6 @@ export type ModalKind = "blueshift" | "redshift" | "settings" | "confirm" | null
 export interface ConfirmState {
   readonly message: string;
   readonly action: () => void;
+  readonly actionLabel?: string;
+  readonly typedWord?: string;
 }

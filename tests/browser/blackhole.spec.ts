@@ -1,62 +1,26 @@
-import type { Locator, Page } from "@playwright/test";
 import { expect, test } from "./auth";
-
-const DIMMED = "[data-dimmed]";
-
-async function createBlueshiftWithStars(page: Page, name: string, titles: readonly string[]): Promise<void> {
-  await page.getByRole("button", { name: "+ New Blueshift" }).click();
-  await page.getByLabel("Name").fill(name);
-  await page.getByRole("button", { name: "Create" }).click();
-  await expect(page.getByRole("heading", { name }).first()).toBeVisible();
-  for (const title of titles) {
-    await page.getByLabel("New Star title").fill(title);
-    await page.getByRole("button", { name: "Add Star" }).click();
-    await expect(page.getByText(title).first()).toBeVisible();
-  }
-}
-
-async function attemptInertClick(control: Locator): Promise<void> {
-  await expect(control.click({ timeout: 500 })).rejects.toThrow(/timeout/iu);
-}
-
-function centreLocator(page: Page): Locator {
-  return page.locator(DIMMED).filter({ has: page.getByRole("button", { name: "Add Star" }) });
-}
-
-function legendLocator(page: Page): Locator {
-  return page.getByRole("region", { name: "Legend" });
-}
-
-async function clearLeftoverBlackhole(page: Page): Promise<void> {
-  await page.goto("/");
-  await expect(page.getByRole("heading", { name: "North Stars" })).toBeVisible();
-  await expect(page.getByRole("status")).toBeHidden();
-  const region = page.getByRole("region", { name: "Blackhole" });
-  if ((await region.count()) === 0) return;
-  await region
-    .getByLabel(/Complete /u)
-    .first()
-    .click();
-  await expect(region).toBeHidden();
-}
-
-async function setUp(page: Page): Promise<void> {
-  await clearLeftoverBlackhole(page);
-}
+import {
+  attemptInertClick,
+  centreLocator,
+  createBlueshiftWithStars,
+  DIMMED,
+  legendLocator,
+  clearLeftoverBlackhole,
+} from "./blackhole-helpers";
 
 test.afterEach(async ({ page }) => {
   await clearLeftoverBlackhole(page);
 });
 
 test("hides the Blackhole section when no Blackhole exists", async ({ page }) => {
-  await setUp(page);
+  await clearLeftoverBlackhole(page);
   await expect(page.getByRole("region", { name: "Blackhole" })).toHaveCount(0);
 });
 
 test("collapsing a Star shows the Blackhole above North Stars, centered with a solid black border", async ({
   page,
 }) => {
-  await setUp(page);
+  await clearLeftoverBlackhole(page);
   const name = `Collapsed ${crypto.randomUUID().slice(0, 8)}`;
   await createBlueshiftWithStars(page, name, ["Swallow the sky", "Tidy the deck"]);
   await expect(page.getByRole("region", { name: "Blackhole" })).toHaveCount(0);
@@ -89,7 +53,7 @@ test("collapsing a Star shows the Blackhole above North Stars, centered with a s
 });
 
 test("ticking the Blackhole complete clears the section and frees the collapse affordance", async ({ page }) => {
-  await setUp(page);
+  await clearLeftoverBlackhole(page);
   const name = `Finished hole ${crypto.randomUUID().slice(0, 8)}`;
   await createBlueshiftWithStars(page, name, ["Swallow the sky", "Tidy the deck"]);
   await page.getByRole("button", { name: "Collapse Swallow the sky into a Blackhole" }).click();
@@ -104,7 +68,7 @@ test("ticking the Blackhole complete clears the section and frees the collapse a
 });
 
 test("deleting the Blackhole row lifts the section", async ({ page }) => {
-  await setUp(page);
+  await clearLeftoverBlackhole(page);
   const name = `Deleted hole ${crypto.randomUUID().slice(0, 8)}`;
   await createBlueshiftWithStars(page, name, ["Swallow the sky"]);
   await page.getByRole("button", { name: "Collapse Swallow the sky into a Blackhole" }).click();
@@ -117,7 +81,7 @@ test("deleting the Blackhole row lifts the section", async ({ page }) => {
 });
 
 test("collapse applies before the server answers", async ({ page }) => {
-  await setUp(page);
+  await clearLeftoverBlackhole(page);
   const name = `Optimistic hole ${crypto.randomUUID().slice(0, 8)}`;
   await createBlueshiftWithStars(page, name, ["Swallow the sky"]);
   await page.route("**/api/blueshifts/stars/*", async (route) => {
@@ -135,7 +99,7 @@ test("collapse applies before the server answers", async ({ page }) => {
 });
 
 test("dims and freezes the workspace while a Blackhole exists, and lifts on completion", async ({ page }) => {
-  await setUp(page);
+  await clearLeftoverBlackhole(page);
   const name = `Frozen sky ${crypto.randomUUID().slice(0, 8)}`;
   await createBlueshiftWithStars(page, name, ["Swallow the sky", "Tidy the deck"]);
   await page.getByRole("button", { name: "Collapse Swallow the sky into a Blackhole" }).click();
@@ -175,7 +139,7 @@ test("dims and freezes the workspace while a Blackhole exists, and lifts on comp
 });
 
 test("the dim lifts when the Blackhole is deleted", async ({ page }) => {
-  await setUp(page);
+  await clearLeftoverBlackhole(page);
   const name = `Released sky ${crypto.randomUUID().slice(0, 8)}`;
   await createBlueshiftWithStars(page, name, ["Swallow the sky", "Tidy the deck"]);
   await page.getByRole("button", { name: "Collapse Swallow the sky into a Blackhole" }).click();
@@ -190,7 +154,7 @@ test("the dim lifts when the Blackhole is deleted", async ({ page }) => {
 });
 
 test("copies of the Blackhole Star outside the Blackhole section blur with everything else", async ({ page }) => {
-  await setUp(page);
+  await clearLeftoverBlackhole(page);
   const name = `Twin copy ${crypto.randomUUID().slice(0, 8)}`;
   const hole = `Swallow the sky ${crypto.randomUUID().slice(0, 8)}`;
   const other = `Tidy the deck ${crypto.randomUUID().slice(0, 8)}`;
@@ -215,7 +179,7 @@ test("copies of the Blackhole Star outside the Blackhole section blur with every
 });
 
 test("the centre panel blurs like everything else when the Blackhole is selected", async ({ page }) => {
-  await setUp(page);
+  await clearLeftoverBlackhole(page);
   const name = `Selected hole ${crypto.randomUUID().slice(0, 8)}`;
   await createBlueshiftWithStars(page, name, ["Swallow the sky", "Tidy the deck"]);
   await page.getByRole("button", { name: "Collapse Swallow the sky into a Blackhole" }).click();
@@ -231,7 +195,7 @@ test("the centre panel blurs like everything else when the Blackhole is selected
 });
 
 test("the centre panel blurs with the rest even when no shift is selected", async ({ page }) => {
-  await setUp(page);
+  await clearLeftoverBlackhole(page);
   const name = `Held sky ${crypto.randomUUID().slice(0, 8)}`;
   await createBlueshiftWithStars(page, name, ["Swallow the sky"]);
   await page.getByRole("button", { name: "Collapse Swallow the sky into a Blackhole" }).click();

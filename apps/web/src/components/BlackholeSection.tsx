@@ -24,9 +24,18 @@ export function BlackholeSection(): React.JSX.Element | null {
             workspace.ops.updateStar("blueshift", blackhole.id, { completed });
           }}
           onDelete={() => {
-            workspace.confirmDelete(`Delete the Star "${blackhole.title}"?`, () => {
+            workspace.confirmAction(`Delete the Star "${blackhole.title}"?`, () => {
               workspace.ops.deleteStar("blueshift", blackhole.id);
             });
+          }}
+          onEvaporate={() => {
+            workspace.confirmAction(
+              `Evaporate the Blackhole "${blackhole.title}"? The Star returns to its Blueshift, keeping its title and completion state.`,
+              () => {
+                workspace.ops.updateStar("blueshift", blackhole.id, { blackhole: false });
+              },
+              { actionLabel: "Evaporate", typedWord: "evaporate" },
+            );
           }}
         />
       </div>

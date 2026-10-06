@@ -77,7 +77,7 @@ export function BlueshiftPanel(): React.JSX.Element {
             }}
             collapseBlocked={blackholeExists}
             onDelete={() => {
-              workspace.confirmDelete(`Delete the Star "${star.title}"?`, () => {
+              workspace.confirmAction(`Delete the Star "${star.title}"?`, () => {
                 workspace.ops.deleteStar("blueshift", star.id);
               });
             }}

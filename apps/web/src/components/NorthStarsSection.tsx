@@ -38,7 +38,7 @@ export function NorthStarsSection(): React.JSX.Element {
               }}
               collapseBlocked={workspace.blackholes.length > 0}
               onDelete={() => {
-                workspace.confirmDelete(`Delete ${star.title}?`, () => {
+                workspace.confirmAction(`Delete ${star.title}?`, () => {
                   workspace.ops.deleteStar("blueshift", star.id);
                 });
               }}

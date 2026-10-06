@@ -48,7 +48,7 @@ export function ShiftColumn({
                         workspace.select(kind, shift.id);
                       }}
                       onDelete={() => {
-                        workspace.confirmDelete(
+                        workspace.confirmAction(
                           `Delete the ${isRedshift ? "Redshift" : "Blueshift"} "${shift.name}"?`,
                           () => {
                             workspace.ops.deleteShift(kind, shift.id);

@@ -71,7 +71,11 @@ export interface Workspace {
   readonly openModal: (modal: Exclude<ModalKind, null>) => void;
   readonly closeModal: () => void;
   readonly confirm: ConfirmState | null;
-  readonly confirmDelete: (message: string, action: () => void) => void;
+  readonly confirmAction: (
+    message: string,
+    action: () => void,
+    options?: { readonly actionLabel?: string; readonly typedWord?: string },
+  ) => void;
   readonly queryError: Error | null;
   readonly northStarsError: Error | null;
   readonly pending: boolean;
@@ -226,8 +230,12 @@ export function useWorkspaceState(): Workspace {
     settings: updateSettings.error?.message,
   };
 
-  const confirmDelete = (message: string, action: () => void): void => {
-    setConfirm({ message, action });
+  const confirmAction = (
+    message: string,
+    action: () => void,
+    options?: { readonly actionLabel?: string; readonly typedWord?: string },
+  ): void => {
+    setConfirm({ message, action, ...options });
     setModal("confirm");
   };
 
@@ -257,7 +265,7 @@ export function useWorkspaceState(): Workspace {
     },
     closeModal,
     confirm,
-    confirmDelete,
+    confirmAction,
     queryError,
     northStarsError: northStarsQuery.error,
     pending:

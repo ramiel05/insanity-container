@@ -8,6 +8,7 @@ export function StarRow({
   onNorthStar,
   onCollapse,
   collapseBlocked = false,
+  onEvaporate,
   onSelect,
   onDelete,
   dark = false,
@@ -18,6 +19,7 @@ export function StarRow({
   readonly onNorthStar?: (value: boolean) => void;
   readonly onCollapse?: () => void;
   readonly collapseBlocked?: boolean;
+  readonly onEvaporate?: () => void;
   readonly onSelect?: () => void;
   readonly onDelete: () => void;
   readonly dark?: boolean;
@@ -86,6 +88,17 @@ export function StarRow({
           className={`text-xl ${star.blackhole ? (dark ? "text-paper" : "text-ink") : "text-muted"} disabled:cursor-not-allowed disabled:opacity-40`}
         >
           {"●"}
+        </button>
+      )}
+      {onEvaporate && (
+        <button
+          type="button"
+          aria-label={`Evaporate ${star.title} back into its Blueshift`}
+          title="Evaporate Blackhole"
+          onClick={onEvaporate}
+          className="px-1 text-muted hover:text-paper"
+        >
+          {"◌"}
         </button>
       )}
       <button
