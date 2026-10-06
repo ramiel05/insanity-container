@@ -2,6 +2,7 @@ import { createClient, type Client } from "@libsql/client";
 import { drizzle, type LibSQLDatabase } from "drizzle-orm/libsql";
 import { blueshifts, blueshiftStars, redshifts, redshiftStars, settings } from "#db/schema";
 import { connectionFromEnv, toFileUrl, type DbConnection } from "./connection";
+import { createRecoveringClient } from "./recovering-client";
 
 const schema = { blueshifts, blueshiftStars, redshifts, redshiftStars, settings };
 
@@ -21,7 +22,8 @@ export async function createDb(connection: DbConnection | string): Promise<DbBun
     readYourWrites: typeof config.syncUrl === "string",
   });
   await client.execute("PRAGMA foreign_keys = ON");
-  return { db: drizzle(client, { schema }), client };
+  const recovering = createRecoveringClient(client);
+  return { db: drizzle(recovering, { schema }), client: recovering };
 }
 
 export const { db, client } = await createDb(connectionFromEnv());

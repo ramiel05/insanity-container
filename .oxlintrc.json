@@ -127,13 +127,29 @@
       }
     },
     {
+      "files": ["apps/server/src/db/recovering-client.ts"],
+      "rules": {
+        "typescript/no-unsafe-argument": "off",
+        "typescript/no-unsafe-assignment": "off",
+        "typescript/no-unsafe-call": "off",
+        "typescript/no-unsafe-member-access": "off",
+        "typescript/no-unsafe-return": "off"
+      }
+    },
+    {
+      "files": ["apps/server/src/db/recovering-client.ts", "apps/server/src/db/recovering-client.test.ts"],
+      "rules": {
+        "typescript/promise-function-async": "off"
+      }
+    },
+    {
       "files": ["apps/server/src/auth.ts"],
       "rules": {
         "typescript/promise-function-async": "off"
       }
     },
     {
-      "files": ["apps/server/src/index.ts"],
+      "files": ["apps/server/src/index.ts", "apps/server/src/db/recovering-client.ts"],
       "rules": {
         "no-console": "off"
       }
