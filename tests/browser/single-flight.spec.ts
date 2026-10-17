@@ -17,28 +17,49 @@ async function createBlueshift(page: Page, name: string): Promise<void> {
   await expect(page.getByRole("heading", { name }).first()).toBeVisible();
 }
 
-test("a double-click on Create lands one Blueshift", async ({ page }) => {
-  const name = `Twice clicked ${crypto.randomUUID().slice(0, 8)}`;
-  let posts = 0;
-  await page.route("**/api/blueshifts", async (route) => {
-    if (route.request().method() !== "POST") {
+function delayedMutation(
+  page: Page,
+  pattern: string,
+  method: "POST" | "PATCH" | "DELETE",
+): { readonly count: () => number } {
+  let count = 0;
+  void page.route(pattern, async (route) => {
+    if (route.request().method() !== method) {
       await route.continue();
       return;
     }
-    posts += 1;
+    count += 1;
     await new Promise((resolve) => {
       setTimeout(resolve, 400);
     });
     await route.continue();
   });
+  return { count: (): number => count };
+}
+
+test("a double-click on Create lands one Blueshift", async ({ page }) => {
+  const name = `Twice clicked ${crypto.randomUUID().slice(0, 8)}`;
+  const posts = delayedMutation(page, "**/api/blueshifts", "POST");
   await page.goto("/");
   await page.getByRole("button", { name: "+ New Blueshift" }).click();
   await page.getByLabel("Name").fill(name);
   await expect(page.getByRole("button", { name: "Create" })).toBeEnabled();
   await page.getByRole("button", { name: "Create" }).dblclick();
   await expect(page.getByRole("heading", { name })).toBeVisible({ timeout: 10_000 });
-  expect(posts).toBe(1);
+  expect(posts.count()).toBe(1);
   await expect(page.getByLabel("Blueshifts", { exact: true }).getByLabel(`Magnitude of ${name}`)).toHaveCount(1);
+});
+
+test("a double-Enter on Create lands one Blueshift", async ({ page }) => {
+  const name = `Double entered ${crypto.randomUUID().slice(0, 8)}`;
+  const posts = delayedMutation(page, "**/api/blueshifts", "POST");
+  await page.goto("/");
+  await page.getByRole("button", { name: "+ New Blueshift" }).click();
+  await page.getByLabel("Name").fill(name);
+  await page.keyboard.press("Enter");
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("heading", { name })).toBeVisible({ timeout: 10_000 });
+  expect(posts.count()).toBe(1);
 });
 
 test("a double-click on Add Star lands one Star", async ({ page }) => {
@@ -46,23 +67,25 @@ test("a double-click on Add Star lands one Star", async ({ page }) => {
   const title = `Sketched route ${crypto.randomUUID().slice(0, 8)}`;
   await page.goto("/");
   await createBlueshift(page, name);
-  let posts = 0;
-  await page.route("**/api/blueshifts/*/stars", async (route) => {
-    if (route.request().method() !== "POST") {
-      await route.continue();
-      return;
-    }
-    posts += 1;
-    await new Promise((resolve) => {
-      setTimeout(resolve, 400);
-    });
-    await route.continue();
-  });
+  const posts = delayedMutation(page, "**/api/blueshifts/*/stars", "POST");
   await page.getByLabel("New Star title").fill(title);
   await page.getByRole("button", { name: "Add Star" }).dblclick();
   await expect(page.getByText(title).first()).toBeVisible({ timeout: 10_000 });
-  expect(posts).toBe(1);
+  expect(posts.count()).toBe(1);
   await expect(page.getByText(title)).toHaveCount(1);
+});
+
+test("a double-Enter on Add Star lands one Star", async ({ page }) => {
+  const name = `Star keyed once ${crypto.randomUUID().slice(0, 8)}`;
+  const title = `Charted current ${crypto.randomUUID().slice(0, 8)}`;
+  await page.goto("/");
+  await createBlueshift(page, name);
+  const posts = delayedMutation(page, "**/api/blueshifts/*/stars", "POST");
+  await page.getByLabel("New Star title").fill(title);
+  await page.keyboard.press("Enter");
+  await page.keyboard.press("Enter");
+  await expect(page.getByText(title).first()).toBeVisible({ timeout: 10_000 });
+  expect(posts.count()).toBe(1);
 });
 
 test("a double-click on Confirm deletes once", async ({ page }) => {
@@ -73,37 +96,15 @@ test("a double-click on Confirm deletes once", async ({ page }) => {
   await page.getByLabel("New Star title").fill(title);
   await page.getByRole("button", { name: "Add Star" }).click();
   await expect(page.getByText(title).first()).toBeVisible();
-  let deletes = 0;
-  await page.route("**/api/blueshifts/stars/*", async (route) => {
-    if (route.request().method() !== "DELETE") {
-      await route.continue();
-      return;
-    }
-    deletes += 1;
-    await new Promise((resolve) => {
-      setTimeout(resolve, 400);
-    });
-    await route.continue();
-  });
+  const deletes = delayedMutation(page, "**/api/blueshifts/stars/*", "DELETE");
   await page.getByRole("button", { name: `Delete ${title}` }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Delete" }).dblclick();
   await expect(page.getByText(title).first()).toBeHidden({ timeout: 10_000 });
-  expect(deletes).toBe(1);
+  expect(deletes.count()).toBe(1);
 });
 
 test("a double-click on Save lands one settings write", async ({ page }) => {
-  let saves = 0;
-  await page.route("**/api/settings", async (route) => {
-    if (route.request().method() !== "PATCH") {
-      await route.continue();
-      return;
-    }
-    saves += 1;
-    await new Promise((resolve) => {
-      setTimeout(resolve, 400);
-    });
-    await route.continue();
-  });
+  const saves = delayedMutation(page, "**/api/settings", "PATCH");
   await page.goto("/");
   await page.getByRole("button", { name: "Settings" }).click();
   const dialog = page.getByRole("dialog");
@@ -111,7 +112,7 @@ test("a double-click on Save lands one settings write", async ({ page }) => {
   await dialog.getByRole("combobox").first().selectOption({ index: 1 });
   await dialog.getByRole("button", { name: "Save" }).dblclick();
   await expect(dialog).toBeHidden({ timeout: 10_000 });
-  expect(saves).toBe(1);
+  expect(saves.count()).toBe(1);
 });
 
 test("the Create button disables at first fire and re-enables after a failure", async ({ page }) => {
@@ -191,7 +192,7 @@ test("independent targets are never blocked by another action's flight", async (
   await page.getByRole("button", { name: "Add Star" }).click();
   await expect(page.getByText(blackholeTitle).first()).toBeVisible();
 
-  await page.route("**/api/blueshifts/*/stars", async (route) => {
+  void page.route("**/api/blueshifts/*/stars", async (route) => {
     if (route.request().method() !== "POST") {
       await route.continue();
       return;
