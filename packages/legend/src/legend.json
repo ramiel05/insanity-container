@@ -35,6 +35,11 @@
     "definition": "A Star of a Blueshift designated as current focus. North Star is a persistent designation: there is no limit on how many North Stars may exist at once."
   },
   {
+    "section": "Language",
+    "term": "In-flight",
+    "definition": "The state of an action in the workspace between being fired and settling, where settling means the action succeeded or failed. While an action is in-flight, the same action on the same target cannot fire again."
+  },
+  {
     "section": "Atlas",
     "term": "Atlas",
     "definition": "The static site that documents the Polaris methodology: a Legend of concepts and Guides for working with them."

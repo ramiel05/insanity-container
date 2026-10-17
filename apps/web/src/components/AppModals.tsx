@@ -12,6 +12,7 @@ export function AppModals(): React.JSX.Element {
         <ShiftModal
           label="Blueshift"
           error={workspace.errors.createShift("blueshift")}
+          inFlight={workspace.inFlight.createShift("blueshift")}
           onClose={workspace.closeModal}
           onSubmit={(input) => {
             workspace.ops.createShift("blueshift", input);
@@ -22,6 +23,7 @@ export function AppModals(): React.JSX.Element {
         <ShiftModal
           label="Redshift"
           error={workspace.errors.createShift("redshift")}
+          inFlight={workspace.inFlight.createShift("redshift")}
           onClose={workspace.closeModal}
           onSubmit={(input) => {
             workspace.ops.createShift("redshift", input);
@@ -32,6 +34,7 @@ export function AppModals(): React.JSX.Element {
         <SettingsModal
           timezone={workspace.settings.timezone}
           error={workspace.errors.settings}
+          inFlight={workspace.inFlight.settings}
           onClose={workspace.closeModal}
           onSubmit={(timezone: string | null) => {
             workspace.ops.updateSettings({ timezone });

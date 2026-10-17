@@ -52,7 +52,7 @@ export function BlueshiftPanel(): React.JSX.Element {
         />
         <button
           type="submit"
-          disabled={!valid}
+          disabled={!valid || workspace.inFlight.createStar("blueshift")}
           onMouseDown={(event) => {
             event.preventDefault();
           }}

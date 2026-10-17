@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient, type QueryClient, type UseMutationResult } from "@tanstack/react-query";
 import * as api from "#lib/api";
+import { createInFlightLock, type InFlightKey } from "#lib/in-flight";
 import {
   applyStarPatch,
   blackholesKey,
@@ -27,6 +28,8 @@ import type {
   UpdateRedshift,
 } from "@proj/shared";
 import type { Kind } from "#lib/kinds";
+
+const flight = createInFlightLock();
 
 export interface WorkspaceHandlers {
   readonly onSelected: (kind: Kind, id: string) => void;
@@ -115,6 +118,30 @@ async function takeStarSections(client: QueryClient, kind: "blueshift" | "redshi
   const sections = kind === "blueshift" ? [northStarsKey(), blackholesKey()] : [];
   for (const sectionKey of sections) await client.cancelQueries({ queryKey: sectionKey });
   return [...snapshot(client, starsKey()), ...sections.flatMap((sectionKey) => snapshot(client, sectionKey))];
+}
+
+export function guarded<TData, TVars>(
+  mutation: UseMutationResult<TData, Error, TVars>,
+  keyOf: (vars: TVars) => InFlightKey,
+): UseMutationResult<TData, Error, TVars> {
+  const missingVariables = new Error("A guarded mutation always fires with variables");
+  const inFlight = new Error("The same action is already in-flight; the duplicate call was dropped");
+  return {
+    ...mutation,
+    mutate: (...args) => {
+      const [vars, options] = args;
+      if (vars === undefined) throw missingVariables;
+      const attempt = flight.tryRun(keyOf(vars), () => mutation.mutateAsync(vars, options));
+      if (attempt !== null) void attempt.catch(() => undefined);
+    },
+    mutateAsync: (...args) => {
+      const [vars, options] = args;
+      if (vars === undefined) return Promise.reject(missingVariables);
+      const attempt = flight.tryRun(keyOf(vars), () => mutation.mutateAsync(vars, options));
+      if (attempt === null) return Promise.reject(inFlight);
+      return attempt;
+    },
+  };
 }
 
 export function useKindMutations(kind: Kind, handlers: WorkspaceHandlers): KindMutations {
@@ -214,5 +241,12 @@ export function useKindMutations(kind: Kind, handlers: WorkspaceHandlers): KindM
     },
   });
 
-  return { create, update, remove, createStar, updateStar, removeStar };
+  return {
+    create: guarded(create, () => `create:${kind}`),
+    update: guarded(update, ([id]) => `update:${kind}:${id}`),
+    remove: guarded(remove, (id) => `remove:${kind}:${id}`),
+    createStar: guarded(createStar, ([shiftId]) => `createStar:${kind}:${shiftId}`),
+    updateStar: guarded(updateStar, ([id]) => `updateStar:${kind}:${id}`),
+    removeStar: guarded(removeStar, (id) => `removeStar:${kind}:${id}`),
+  };
 }

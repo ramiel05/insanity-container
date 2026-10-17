@@ -5,11 +5,13 @@ import { Modal } from "./Modal";
 export function SettingsModal({
   timezone,
   error,
+  inFlight,
   onClose,
   onSubmit,
 }: {
   readonly timezone: string | null;
   readonly error?: string;
+  readonly inFlight: boolean;
   readonly onClose: () => void;
   readonly onSubmit: (timezone: string | null) => void;
 }): React.JSX.Element {
@@ -49,7 +51,11 @@ export function SettingsModal({
           <button type="button" onClick={onClose} className="rounded-xl px-4 py-2 text-sm font-bold text-muted">
             {"Cancel"}
           </button>
-          <button type="submit" className="rounded-xl bg-accent px-4 py-2 text-sm font-bold text-white">
+          <button
+            type="submit"
+            disabled={inFlight}
+            className="rounded-xl bg-accent px-4 py-2 text-sm font-bold text-white disabled:opacity-40"
+          >
             {"Save"}
           </button>
         </div>

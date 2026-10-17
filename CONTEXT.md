@@ -32,6 +32,10 @@ _Avoid_: Focus mode, locked task, priority, blocking task
 A Star of a Blueshift designated as current focus. North Star is a persistent designation: there is no limit on how many North Stars may exist at once.
 _Avoid_: Priority, featured task, daily task
 
+**In-flight**:
+The state of an action in the workspace between being fired and settling, where settling means the action succeeded or failed. While an action is in-flight, the same action on the same target cannot fire again.
+_Avoid_: loading, pending spinner, debounce
+
 ### Atlas
 
 **Atlas**:

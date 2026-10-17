@@ -24,6 +24,7 @@ test("adds Stars in quick succession from the inline input", async ({ page }) =>
   for (const title of ["Chart the currents", "Log the bearing", "Plot the return"]) {
     await input.fill(title);
     await page.keyboard.press("Enter");
+    await expect(page.getByText(title).first()).toBeVisible();
   }
   await expect(input).toBeFocused();
   await expect(page.getByText("Chart the currents").first()).toBeVisible();

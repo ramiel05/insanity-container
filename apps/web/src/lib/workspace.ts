@@ -4,6 +4,7 @@ import * as api from "#lib/api";
 import { effectiveTimeZone } from "#lib/day";
 import { blackholesKey, latestError, listsKey, northStarsKey, settingsKey, starsKey } from "#lib/workspace-cache";
 import {
+  guarded,
   useKindMutations,
   type CreateStarInput,
   type KindMutations,
@@ -79,6 +80,11 @@ export interface Workspace {
   readonly queryError: Error | null;
   readonly northStarsError: Error | null;
   readonly pending: boolean;
+  readonly inFlight: {
+    readonly createShift: (kind: Kind) => boolean;
+    readonly createStar: (kind: Kind) => boolean;
+    readonly settings: boolean;
+  };
   readonly ops: WorkspaceOps;
   readonly errors: WorkspaceErrors;
 }
@@ -162,16 +168,19 @@ export function useWorkspaceState(): Workspace {
   const settingsQuery = useQuery({ queryKey: settingsKey(), queryFn: api.getSettings });
   const forState = (kind: Kind): KindState<Kind> => stateFor(kind, blueshiftState, redshiftState);
 
-  const updateSettings = useMutation({
-    mutationFn: async (input: { readonly timezone: string | null }) => {
-      const settings = await api.updateSettings(input);
-      return settings;
-    },
-    onSuccess: () => {
-      closeModal();
-      void client.invalidateQueries({ queryKey: settingsKey() });
-    },
-  });
+  const updateSettings = guarded(
+    useMutation({
+      mutationFn: async (input: { readonly timezone: string | null }) => {
+        const settings = await api.updateSettings(input);
+        return settings;
+      },
+      onSuccess: () => {
+        closeModal();
+        void client.invalidateQueries({ queryKey: settingsKey() });
+      },
+    }),
+    () => "settings",
+  );
 
   function shiftsFor(kind: "blueshift"): readonly Blueshift[];
   function shiftsFor(kind: "redshift"): readonly Redshift[];
@@ -273,6 +282,11 @@ export function useWorkspaceState(): Workspace {
       redshiftState.list.isPending ||
       northStarsQuery.isPending ||
       blackholesQuery.isPending,
+    inFlight: {
+      createShift: (kind) => forState(kind).mutations.create.isPending,
+      createStar: (kind) => forState(kind).mutations.createStar.isPending,
+      settings: updateSettings.isPending,
+    },
     ops,
     errors,
   };

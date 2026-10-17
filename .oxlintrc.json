@@ -4,6 +4,7 @@
     "typeAware": true
   },
   "plugins": ["typescript", "react", "import"],
+  "jsPlugins": ["./.oxlint/workspace-plugin.mjs"],
   "categories": {
     "correctness": "error",
     "suspicious": "error",
@@ -98,6 +99,36 @@
   },
   "overrides": [
     {
+      "files": [".oxlint/workspace-plugin.mjs"],
+      "rules": {
+        "import/no-default-export": "off",
+        "typescript/no-unsafe-argument": "off",
+        "typescript/no-unsafe-assignment": "off",
+        "typescript/no-unsafe-call": "off",
+        "typescript/no-unsafe-member-access": "off",
+        "typescript/strict-boolean-expressions": "off"
+      }
+    },
+    {
+      "files": ["apps/web/src/**"],
+      "rules": {
+        "workspace/no-restricted-query-imports": "error"
+      }
+    },
+    {
+      "files": [
+        "apps/web/src/lib/query-client.ts",
+        "apps/web/src/lib/query-provider.tsx",
+        "apps/web/src/lib/workspace.ts",
+        "apps/web/src/lib/workspace-cache.ts",
+        "apps/web/src/lib/workspace-cache.test.ts",
+        "apps/web/src/lib/workspace-mutations.ts"
+      ],
+      "rules": {
+        "workspace/no-restricted-query-imports": "off"
+      }
+    },
+    {
       "files": ["**/{playwright,vite,astro,drizzle}.config.*", "tests/browser/global-setup.ts"],
       "rules": {
         "import/no-default-export": "off"
@@ -123,7 +154,16 @@
         "apps/web/src/lib/workspace-mutations.ts"
       ],
       "rules": {
-        "no-undefined": "off"
+        "no-undefined": "off",
+        "typescript/promise-function-async": "off",
+        "typescript/require-await": "off"
+      }
+    },
+    {
+      "files": ["apps/web/src/lib/in-flight.ts", "apps/web/src/lib/in-flight.test.ts"],
+      "rules": {
+        "typescript/promise-function-async": "off",
+        "typescript/require-await": "off"
       }
     },
     {

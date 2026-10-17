@@ -65,7 +65,7 @@ export function RedshiftPanel(): React.JSX.Element {
         </label>
         <button
           type="submit"
-          disabled={!valid}
+          disabled={!valid || workspace.inFlight.createStar("redshift")}
           onMouseDown={(event) => {
             event.preventDefault();
           }}

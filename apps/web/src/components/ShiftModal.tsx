@@ -6,11 +6,13 @@ import { Actions } from "./Actions";
 export function ShiftModal({
   label,
   error,
+  inFlight,
   onClose,
   onSubmit,
 }: {
   readonly label: "Blueshift" | "Redshift";
   readonly error?: string;
+  readonly inFlight: boolean;
   readonly onClose: () => void;
   readonly onSubmit: (input: { readonly name: string; readonly goal?: string }) => void;
 }): React.JSX.Element {
@@ -51,7 +53,7 @@ export function ShiftModal({
             rows={3}
           />
         </label>
-        <Actions disabled={name.trim().length === 0} onClose={onClose} />
+        <Actions disabled={name.trim().length === 0 || inFlight} onClose={onClose} />
       </form>
     </Modal>
   );

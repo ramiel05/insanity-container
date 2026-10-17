@@ -1,9 +1,8 @@
 import ReactDOM from "react-dom/client";
 import { ClerkProvider, SignedIn, SignedOut } from "@clerk/clerk-react";
-import { QueryClientProvider } from "@tanstack/react-query";
 import { App } from "./App";
 import { SignInScreen } from "./components/SignInScreen";
-import { queryClient } from "./lib/query-client";
+import { QueryProvider } from "./lib/query-provider";
 import "./app.css";
 
 const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY ?? "";
@@ -16,14 +15,14 @@ const root = document.getElementById("root");
 if (root !== null) {
   ReactDOM.createRoot(root).render(
     <ClerkProvider publishableKey={publishableKey}>
-      <QueryClientProvider client={queryClient}>
+      <QueryProvider>
         <SignedOut>
           <SignInScreen />
         </SignedOut>
         <SignedIn>
           <App />
         </SignedIn>
-      </QueryClientProvider>
+      </QueryProvider>
     </ClerkProvider>,
   );
 }
